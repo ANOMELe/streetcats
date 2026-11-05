@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#12131c">
+<title>길드 레이드 경매</title>
+<style>
+  :root {
+    --bg: #12131c; --panel: #1c1e2b; --panel2: #252838; --line: #33364a;
+    --text: #e8e9f1; --muted: #9a9db3; --accent: #f0b429; --accent-ink: #1a1400;
+    --ok: #3ecf8e; --no: #ef5d6c; --info: #6aa8ff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 -apple-system, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 20px; margin: 0; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  .hidden { display: none !important; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .login-box { max-width: 380px; margin: 10vh auto 0; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+  input, select, textarea { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--panel2); color: var(--text); font: inherit; }
+  textarea { min-height: 90px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button { font: inherit; border: 0; border-radius: 8px; padding: 9px 14px; cursor: pointer;
+    background: var(--panel2); color: var(--text); border: 1px solid var(--line); white-space: nowrap; }
+  button:hover { filter: brightness(1.15); }
+  button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+  button.ok { background: var(--ok); color: #04210f; border-color: var(--ok); font-weight: 700; }
+  button.no { background: transparent; color: var(--no); border-color: var(--no); }
+  button.sm { padding: 5px 10px; font-size: 13px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .grow { flex: 1 1 160px; min-width: 0; }
+  .full { width: 100%; margin-top: 14px; }
+  header.top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 12px; font-weight: 700;
+    background: var(--panel2); border: 1px solid var(--line); }
+  .badge.master { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .badge.active { background: rgba(62,207,142,.15); color: var(--ok); border-color: var(--ok); }
+  .badge.closed { color: var(--muted); }
+  .badge.join { background: rgba(62,207,142,.15); color: var(--ok); border-color: var(--ok); }
+  .badge.decline { color: var(--no); border-color: var(--no); }
+  nav.tabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 14px; border-bottom: 1px solid var(--line); }
+  nav.tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--muted); padding: 10px 12px; }
+  nav.tabs button.on { color: var(--text); border-bottom-color: var(--accent); font-weight: 700; }
+  .auction { display: grid; gap: 10px; }
+  .auction .title { font-size: 17px; font-weight: 700; }
+  .price { color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip { padding: 2px 8px; border-radius: 99px; background: var(--panel2); font-size: 12px; border: 1px solid var(--line); }
+  .chip.me { border-color: var(--accent); color: var(--accent); }
+  .chip.win { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  th { color: var(--muted); font-size: 12px; font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .table-scroll { overflow-x: auto; }
+  .pricebox { display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+    background: var(--panel2); border: 1px dashed var(--line); border-radius: 8px; padding: 10px 12px; margin-top: 10px; }
+  .pricebox .big { font-size: 22px; }
+  .empty { text-align: center; color: var(--muted); padding: 24px 8px; }
+  #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #000c; color: #fff;
+    padding: 10px 16px; border-radius: 8px; z-index: 99; max-width: 90vw; }
+  #toast.err { background: var(--no); }
+  #loading { position: fixed; top: 0; left: 0; height: 3px; width: 100%; background: var(--accent); animation: load 1s infinite; z-index: 100; }
+  @keyframes load { 0% { transform: scaleX(0); transform-origin: left; } 50% { transform: scaleX(1); transform-origin: left; }
+    51% { transform-origin: right; } 100% { transform: scaleX(0); transform-origin: right; } }
+  details summary { cursor: pointer; color: var(--muted); }
+</style>
+</head>
+<body>
+<div id="loading" class="hidden"></div>
+<div id="toast" class="hidden"></div>
+
+<div class="wrap">
+  <!-- 로그인 -->
+  <section id="v-login" class="login-box hidden">
+    <div class="card">
+      <h1>⚔️ 길드 레이드 경매</h1>
+      <p class="muted">길마가 등록한 닉네임으로 로그인하세요. 처음이면 비밀번호를 새로 정하게 됩니다.</p>
+      <form id="f-login">
+        <label>닉네임</label><input id="l-nick" autocomplete="username" required>
+        <label>비밀번호</label><input id="l-pw" type="password" autocomplete="current-password" placeholder="처음 접속이면 비워두세요">
+        <button class="primary full" type="submit">로그인</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- 최초 비밀번호 설정 -->
+  <section id="v-setpw" class="login-box hidden">
+    <div class="card">
+      <h1>비밀번호 설정</h1>
+      <p class="muted"><b id="s-nick"></b> 님, 처음 접속하셨네요. 앞으로 사용할 비밀번호를 정해주세요.</p>
+      <form id="f-setpw">
+        <label>새 비밀번호 (4자 이상)</label><input id="s-pw" type="password" autocomplete="new-password" required minlength="4">
+        <label>비밀번호 확인</label><input id="s-pw2" type="password" autocomplete="new-password" required minlength="4">
+        <button class="primary full" type="submit">설정하고 시작</button>
+        <button class="full" type="button" onclick="show('login')">취소</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- 메인 -->
+  <section id="v-app" class="hidden">
+    <header class="top">
+      <h1>⚔️ 길드 레이드 경매</h1>
+      <div class="row">
+        <span id="me-nick"></span><span id="me-job" class="muted"></span><span id="me-role" class="badge"></span>
+        <button class="sm" onclick="logout()">로그아웃</button>
+      </div>
+    </header>
+    <nav class="tabs" id="tabs"></nav>
+
+    <!-- 길드원: 경매 -->
+    <div id="t-auction" class="tab">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px">
+        <span class="muted">진행 중인 경매에 참여 여부를 선택하세요.</span>
+        <button class="sm" onclick="loadAuctions()">새로고침</button>
+      </div>
+      <div id="job-notice" class="card hidden" style="border-color:var(--accent)">
+        직업이 아직 설정되지 않았습니다. <button class="sm primary" onclick="setTab('me')">내 정보에서 설정</button>
+      </div>
+      <div id="active-list"></div>
+      <details class="card"><summary>지난 경매 보기</summary><div id="closed-list" style="margin-top:12px"></div></details>
+    </div>
+
+    <!-- 길마: 경매 관리 -->
+    <div id="t-manage" class="tab hidden">
+      <div class="card">
+        <h2>경매 아이템 등록</h2>
+        <label>아이템 검색</label>
+        <input id="a-search" placeholder="이름/분류로 검색">
+        <label>아이템 선택 (아이템 DB)</label>
+        <select id="a-item" size="6"></select>
+        <div id="a-pricebox" class="pricebox hidden">
+          <span><span id="a-name"></span> <span class="muted" id="a-cat"></span></span>
+          <span class="muted">DB 가격 <span class="price big" id="a-dbprice"></span></span>
+        </div>
+        <div class="row">
+          <div class="grow"><label>경매 가격 (DB 가격 자동 입력, 수정 가능)</label><input id="a-price" type="number" min="0" step="1"></div>
+          <div class="grow"><label>메모 (선택)</label><input id="a-memo" placeholder="예: 1넴 드랍"></div>
+        </div>
+        <button class="primary full" id="a-submit" onclick="createAuction()">경매 활성화</button>
+      </div>
+      <div class="row" style="justify-content:space-between;margin-bottom:10px">
+        <h2 style="margin:0">경매 목록</h2>
+        <button class="sm" onclick="loadAuctions()">새로고침</button>
+      </div>
+      <div id="manage-list"></div>
+    </div>
+
+    <!-- 길마: 아이템 DB -->
+    <div id="t-items" class="tab hidden">
+      <div class="card">
+        <h2 id="i-title">아이템 등록</h2>
+        <input type="hidden" id="i-id">
+        <div class="row">
+          <div class="grow"><label>아이템명</label><input id="i-name"></div>
+          <div class="grow"><label>가격</label><input id="i-price" type="number" min="0" step="1"></div>
+        </div>
+        <div class="row">
+          <div class="grow"><label>분류 (선택)</label><input id="i-cat" placeholder="예: 무기, 방어구, 재료"></div>
+          <div class="grow"><label>메모 (선택)</label><input id="i-memo"></div>
+        </div>
+        <div class="row" style="margin-top:14px">
+          <button class="primary grow" onclick="saveItem()">저장</button>
+          <button id="i-cancel" class="hidden" onclick="resetItemForm()">취소</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row" style="justify-content:space-between;margin-bottom:8px">
+          <h2 style="margin:0">아이템 DB <span class="muted" id="i-count"></span></h2>
+          <div class="row">
+            <input id="i-filter" placeholder="검색" style="max-width:200px">
+            <button class="sm" id="b-toggle" onclick="toggleBulk()">가격 일괄 수정</button>
+          </div>
+        </div>
+        <div id="b-bar" class="pricebox hidden" style="flex-wrap:wrap;margin:0 0 10px">
+          <div class="row">
+            <span class="muted">검색된 항목 가격에</span>
+            <input id="b-pct" type="number" value="100" min="0" step="1" style="width:90px;padding:6px 8px">
+            <span class="muted">% 적용</span>
+            <button class="sm" onclick="applyPct()">적용</button>
+            <button class="sm" onclick="resetBulk()">되돌리기</button>
+          </div>
+          <div class="row">
+            <span class="muted" id="b-count">변경 0건</span>
+            <button class="sm primary" id="b-save" onclick="saveBulk()">일괄 저장</button>
+            <button class="sm" onclick="toggleBulk()">닫기</button>
+          </div>
+        </div>
+        <div class="table-scroll"><table>
+          <thead><tr><th>아이템명</th><th>분류</th><th class="num">가격</th><th>메모</th><th></th></tr></thead>
+          <tbody id="i-list"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- 길마: 길드원 -->
+    <div id="t-members" class="tab hidden">
+      <div class="card">
+        <h2>길드원 등록</h2>
+        <p class="muted">한 줄에 한 명씩 <b>닉네임 직업</b> 형태로 입력하세요 (직업은 생략 가능). 엑셀/시트에서 두 열을 복사해 붙여넣어도 됩니다. 등록된 길드원은 처음 로그인할 때 비밀번호를 직접 정합니다.</p>
+        <p class="muted" id="m-jobs"></p>
+        <textarea id="m-names" placeholder="닉네임1 나이트&#10;닉네임2 오라클&#10;닉네임3"></textarea>
+        <button class="primary full" onclick="addMembers()">등록</button>
+      </div>
+      <div class="card">
+        <h2>길드원 목록 <span class="muted" id="m-count"></span></h2>
+        <div class="table-scroll"><table>
+          <thead><tr><th>닉네임</th><th>직업</th><th>권한</th><th>비밀번호</th><th>최근 로그인</th><th></th></tr></thead>
+          <tbody id="m-list"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- 내 정보 -->
+    <div id="t-me" class="tab hidden">
+      <div class="card" style="max-width:420px">
+        <h2>직업</h2>
+        <div class="row">
+          <select id="p-job" class="grow"></select>
+          <button class="primary" onclick="saveMyJob()">저장</button>
+        </div>
+      </div>
+      <div class="card" style="max-width:420px">
+        <h2>비밀번호 변경</h2>
+        <label>현재 비밀번호</label><input id="p-old" type="password" autocomplete="current-password">
+        <label>새 비밀번호 (4자 이상)</label><input id="p-new" type="password" autocomplete="new-password">
+        <label>새 비밀번호 확인</label><input id="p-new2" type="password" autocomplete="new-password">
+        <button class="primary full" onclick="changePassword()">변경</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+var state = { token: null, user: null, auctions: [], items: [], members: [], tab: 'auction', timer: null, bulk: null };
+var TOKEN_KEY = 'guildAuctionToken';
+var API_URL = 'https://script.google.com/macros/s/AKfycbxXhBPqLJu1UD2ncq0hQbjj6enVpckAauDxdQrpU3KFJuTv1r_L7XkgSb7ijHrfIHZXCA/exec';
+var JOBS = ['나이트', '버서커', '어쌔신', '레인저', '엘리멘탈리스트', '오라클', '블레스드', '아티산'];
+function jobOptions(sel, emptyLabel) {
+  return '<option value="">' + (emptyLabel || '직업 선택') + '</option>' + JOBS.map(function (j) {
+    return '<option' + (j === sel ? ' selected' : '') + '>' + j + '</option>'; }).join('');
+}
+
+/* ---------- 공통 ---------- */
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+  return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function won(n) { return Number(n || 0).toLocaleString('ko-KR'); }
+function fmtDate(t) { if (!t) return '-'; var d = new Date(t);
+  return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+function store(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
+function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+var toastTimer;
+function toast(msg, isErr) {
+  var t = $('toast'); t.textContent = msg; t.className = isErr ? 'err' : '';
+  clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.className = 'hidden'; }, 2600);
+}
+
+var pending = 0;
+function call(action, payload, silent) {
+  if (!silent) { pending++; $('loading').classList.remove('hidden'); }
+  return new Promise(function (resolve, reject) {
+    function done() { if (!silent && --pending <= 0) { pending = 0; $('loading').classList.add('hidden'); } }
+    function onRes(res) {
+      done();
+      if (res && res.ok) return resolve(res.data);
+      var msg = (res && res.error) || '오류가 발생했습니다.';
+      if (msg === 'SESSION_EXPIRED') { sessionExpired(); return reject(new Error(msg)); }
+      if (!silent) toast(msg, true);
+      reject(new Error(msg));
+    }
+    function onErr(err) { done(); if (!silent) toast('서버 연결 실패: ' + (err && err.message || err), true); reject(err); }
+    if (window.google && google.script && google.script.run) {
+      // Apps Script 웹앱 주소로 열었을 때
+      google.script.run.withSuccessHandler(onRes).withFailureHandler(onErr).api(action, state.token, payload || {});
+    } else {
+      // GitHub Pages 등 외부 주소로 열었을 때: JSON API(doPost) 호출
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // CORS preflight 회피
+        body: JSON.stringify({ action: action, token: state.token, payload: payload || {} })
+      }).then(function (r) { return r.json(); }).then(onRes, onErr);
+    }
+  });
+}
+
+function show(view) {
+  ['login', 'setpw', 'app'].forEach(function (v) { $('v-' + v).classList.toggle('hidden', v !== view); });
+}
+
+/* ---------- 로그인 ---------- */
+$('f-login').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var nick = $('l-nick').value.trim();
+  call('login', { nickname: nick, password: $('l-pw').value }).then(function (r) {
+    if (r.needSetup) { $('s-nick').textContent = r.nickname; $('s-pw').value = $('s-pw2').value = ''; show('setpw'); $('s-pw').focus(); return; }
+    onLogin(r);
+  }).catch(function () {});
+});
+
+$('f-setpw').addEventListener('submit', function (e) {
+  e.preventDefault();
+  if ($('s-pw').value !== $('s-pw2').value) return toast('비밀번호 확인이 일치하지 않습니다.', true);
+  call('setInitialPassword', { nickname: $('s-nick').textContent, password: $('s-pw').value })
+    .then(function (r) { toast('비밀번호가 설정되었습니다.'); onLogin(r); }).catch(function () {});
+});
+
+function onLogin(r) {
+  state.token = r.token; state.user = r.user; store(TOKEN_KEY, r.token);
+  $('l-pw').value = '';
+  startApp();
+}
+
+function sessionExpired() {
+  state.token = null; store(TOKEN_KEY, null); stopTimer();
+  show('login'); toast('로그인이 만료되었습니다. 다시 로그인하세요.', true);
+}
+
+function logout() {
+  call('logout', {}, true).catch(function () {});
+  state.token = null; state.user = null; store(TOKEN_KEY, null); stopTimer(); show('login');
+}
+
+/* ---------- 앱 / 탭 ---------- */
+function startApp() {
+  var isMaster = state.user.role === '길마';
+  $('me-nick').textContent = state.user.nickname;
+  renderMyJob();
+  $('m-jobs').textContent = '직업: ' + JOBS.join(', ');
+  $('me-role').textContent = state.user.role;
+  $('me-role').className = 'badge' + (isMaster ? ' master' : '');
+  var tabs = [['auction', '경매']];
+  if (isMaster) tabs.push(['manage', '경매 관리'], ['items', '아이템 DB'], ['members', '길드원']);
+  tabs.push(['me', '내 정보']);
+  $('tabs').innerHTML = tabs.map(function (t) {
+    return '<button data-tab="' + t[0] + '">' + t[1] + '</button>'; }).join('');
+  $('tabs').querySelectorAll('button').forEach(function (b) { b.onclick = function () { setTab(b.dataset.tab); }; });
+  show('app');
+  setTab(isMaster && load('guildAuctionTab') && tabs.some(function (t) { return t[0] === load('guildAuctionTab'); })
+    ? load('guildAuctionTab') : 'auction');
+  stopTimer();
+  state.timer = setInterval(function () {
+    if (document.hidden) return;
+    if (state.tab === 'auction' || state.tab === 'manage') loadAuctions(true);
+  }, 20000);
+}
+function stopTimer() { if (state.timer) clearInterval(state.timer); state.timer = null; }
+
+function setTab(tab) {
+  state.tab = tab; store('guildAuctionTab', tab);
+  document.querySelectorAll('.tab').forEach(function (el) { el.classList.toggle('hidden', el.id !== 't-' + tab); });
+  $('tabs').querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === tab); });
+  if (tab === 'auction') loadAuctions();
+  if (tab === 'manage') { loadItems(); loadAuctions(); }
+  if (tab === 'items') loadItems();
+  if (tab === 'members') loadMembers();
+}
+
+/* ---------- 경매 (길드원) ---------- */
+function loadAuctions(silent) {
+  return call('listAuctions', {}, silent).then(function (list) {
+    state.auctions = list; renderAuctions(); if (state.user.role === '길마') renderManage();
+  }).catch(function () {});
+}
+
+function nameChips(names, winner, jobs) {
+  if (!names.length) return '<span class="muted">없음</span>';
+  jobs = jobs || {};
+  return '<div class="chips">' + names.map(function (n) {
+    var cls = n === winner ? 'chip win' : (n === state.user.nickname ? 'chip me' : 'chip');
+    return '<span class="' + cls + '">' + (n === winner ? '🏆 ' : '') + esc(n) +
+      (jobs[n] ? ' <span style="opacity:.7">· ' + esc(jobs[n]) + '</span>' : '') + '</span>';
+  }).join('') + '</div>';
+}
+
+function renderAuctions() {
+  var active = state.auctions.filter(function (a) { return a.status === '진행중'; });
+  var closed = state.auctions.filter(function (a) { return a.status !== '진행중'; });
+  $('active-list').innerHTML = active.length ? active.map(function (a) {
+    var my = a.myEntry;
+    return '<div class="card auction">' +
+      '<div class="row" style="justify-content:space-between">' +
+        '<span class="title">' + esc(a.itemName) + '</span><span class="price">' + won(a.price) + '</span></div>' +
+      (a.memo ? '<div class="muted">' + esc(a.memo) + '</div>' : '') +
+      '<div class="row"><span class="muted">내 선택:</span>' +
+        (my === '참여' ? '<span class="badge join">참여</span>' : my === '불참' ? '<span class="badge decline">불참</span>' : '<span class="muted">미선택</span>') +
+      '</div>' +
+      '<div class="row">' +
+        '<button class="ok grow" ' + (my === '참여' ? 'disabled' : '') + ' onclick="setEntry(\'' + a.id + '\', true)">입찰 참여</button>' +
+        '<button class="no grow" ' + (my === '불참' ? 'disabled' : '') + ' onclick="setEntry(\'' + a.id + '\', false)">불참</button>' +
+      '</div>' +
+      '<div><div class="muted" style="margin-bottom:4px">참여자 ' + a.joined.length + '명</div>' + nameChips(a.joined, null, a.jobs) + '</div>' +
+      '<div class="muted">등록 ' + fmtDate(a.createdAt) + '</div>' +
+    '</div>';
+  }).join('') : '<div class="card empty">진행 중인 경매가 없습니다.</div>';
+
+  $('closed-list').innerHTML = closed.length ? '<div class="table-scroll"><table><thead><tr><th>아이템</th><th class="num">가격</th><th>낙찰자</th><th>참여</th><th>마감</th></tr></thead><tbody>' +
+    closed.map(function (a) {
+      return '<tr><td>' + esc(a.itemName) + '</td><td class="num">' + won(a.price) + '</td><td>' + (a.winner ? '🏆 ' + esc(a.winner) : '-') +
+        '</td><td>' + a.joined.length + '명</td><td class="muted">' + fmtDate(a.closedAt) + '</td></tr>';
+    }).join('') + '</tbody></table></div>' : '<div class="empty">지난 경매가 없습니다.</div>';
+}
+
+function setEntry(id, join) {
+  call('setEntry', { auctionId: id, join: join }).then(function () {
+    toast(join ? '입찰 참여로 선택했습니다.' : '불참으로 선택했습니다.'); loadAuctions(true);
+  }).catch(function () { loadAuctions(true); });
+}
+
+/* ---------- 경매 관리 (길마) ---------- */
+function loadItems() {
+  return call('listItems').then(function (items) { state.items = sortItems(items); renderItemSelect(); renderItems(); }).catch(function () {});
+}
+
+$('a-search').addEventListener('input', renderItemSelect);
+function renderItemSelect() {
+  var q = $('a-search').value.trim().toLowerCase();
+  var sel = $('a-item'), prev = sel.value;
+  var list = state.items.filter(function (i) { return !q || (i.name + ' ' + (i.category || '')).toLowerCase().indexOf(q) >= 0; });
+  sel.innerHTML = list.length ? list.map(function (i) {
+    return '<option value="' + esc(i.id) + '">' + esc(i.name) + (i.category ? ' [' + esc(i.category) + ']' : '') + ' — ' + won(i.price) + '</option>';
+  }).join('') : '<option disabled>' + (state.items.length ? '검색 결과 없음' : '아이템 DB가 비어 있습니다. 아이템 DB 탭에서 먼저 등록하세요.') + '</option>';
+  if (prev && list.some(function (i) { return i.id === prev; })) sel.value = prev;
+  else if (list.length === 1) { sel.value = list[0].id; onItemPick(); }
+}
+
+$('a-item').addEventListener('change', onItemPick);
+function onItemPick() {
+  var item = state.items.filter(function (i) { return i.id === $('a-item').value; })[0];
+  $('a-pricebox').classList.toggle('hidden', !item);
+  if (!item) return;
+  $('a-name').textContent = item.name;
+  $('a-cat').textContent = item.category ? '[' + item.category + ']' : '';
+  $('a-dbprice').textContent = won(item.price);
+  $('a-price').value = item.price;
+}
+
+function createAuction() {
+  var itemId = $('a-item').value;
+  if (!itemId) return toast('아이템을 선택하세요.', true);
+  $('a-submit').disabled = true;
+  call('createAuction', { itemId: itemId, price: $('a-price').value, memo: $('a-memo').value }).then(function () {
+    toast('경매가 활성화되었습니다.');
+    $('a-memo').value = ''; $('a-item').value = ''; $('a-price').value = ''; $('a-pricebox').classList.add('hidden');
+    loadAuctions();
+  }).catch(function () {}).then(function () { $('a-submit').disabled = false; });
+}
+
+function renderManage() {
+  var list = state.auctions;
+  $('manage-list').innerHTML = list.length ? list.map(function (a) {
+    var active = a.status === '진행중';
+    var opts = '<option value="">낙찰자 선택</option>' + a.joined.map(function (n) {
+      return '<option' + (n === a.winner ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('');
+    if (a.winner && a.joined.indexOf(a.winner) < 0) opts += '<option selected>' + esc(a.winner) + '</option>';
+    return '<div class="card auction">' +
+      '<div class="row" style="justify-content:space-between">' +
+        '<span class="row"><span class="title">' + esc(a.itemName) + '</span><span class="badge ' + (active ? 'active' : 'closed') + '">' + esc(a.status) + '</span></span>' +
+        '<span class="price">' + won(a.price) + '</span></div>' +
+      (a.memo ? '<div class="muted">' + esc(a.memo) + '</div>' : '') +
+      '<div><div class="muted" style="margin-bottom:4px">참여 ' + a.joined.length + '명</div>' + nameChips(a.joined, a.winner, a.jobs) + '</div>' +
+      (a.declined.length ? '<div><div class="muted" style="margin-bottom:4px">불참 ' + a.declined.length + '명</div>' + nameChips(a.declined, null, a.jobs) + '</div>' : '') +
+      '<div class="row">' +
+        '<select class="grow" id="w-' + a.id + '">' + opts + '</select>' +
+        '<button class="sm" onclick="setWinner(\'' + a.id + '\')">낙찰 저장</button>' +
+        (active ? '<button class="sm primary" onclick="setStatus(\'' + a.id + '\', \'마감\')">마감</button>'
+                : '<button class="sm" onclick="setStatus(\'' + a.id + '\', \'진행중\')">다시 진행</button>') +
+        '<button class="sm no" onclick="deleteAuction(\'' + a.id + '\')">삭제</button>' +
+      '</div>' +
+      '<div class="muted">등록 ' + fmtDate(a.createdAt) + ' · ' + esc(a.createdBy) + (a.closedAt ? ' · 마감 ' + fmtDate(a.closedAt) : '') + '</div>' +
+    '</div>';
+  }).join('') : '<div class="card empty">등록된 경매가 없습니다.</div>';
+}
+
+function setStatus(id, status) {
+  call('updateAuction', { id: id, status: status }).then(function () { toast(status === '마감' ? '마감했습니다.' : '다시 진행합니다.'); loadAuctions(); }).catch(function () {});
+}
+function setWinner(id) {
+  var w = $('w-' + id).value;
+  call('updateAuction', { id: id, winner: w }).then(function () { toast(w ? '낙찰자: ' + w : '낙찰자를 비웠습니다.'); loadAuctions(); }).catch(function () {});
+}
+function deleteAuction(id) {
+  if (!confirm('이 경매와 참여 기록을 삭제할까요?')) return;
+  call('deleteAuction', { id: id }).then(function () { toast('삭제했습니다.'); loadAuctions(); }).catch(function () {});
+}
+
+/* ---------- 아이템 DB (길마) ---------- */
+// 분류 순서: 주무기 → 보조무기 → 공용 → 그 외(가나다) → 분류 없음. 같은 분류 안에서는 아이템명 가나다순
+var CAT_ORDER = ['주무기', '보조무기', '공용'];
+function catRank(c) { var i = CAT_ORDER.indexOf(c || ''); return i >= 0 ? i : (c ? CAT_ORDER.length : CAT_ORDER.length + 1); }
+function sortItems(list) {
+  return list.slice().sort(function (a, b) {
+    return catRank(a.category) - catRank(b.category)
+      || String(a.category || '').localeCompare(String(b.category || ''), 'ko')
+      || String(a.name).localeCompare(String(b.name), 'ko');
+  });
+}
+function filteredItems() {
+  var q = $('i-filter').value.trim().toLowerCase();
+  return state.items.filter(function (i) { return !q || (i.name + ' ' + (i.category || '') + ' ' + (i.memo || '')).toLowerCase().indexOf(q) >= 0; });
+}
+
+$('i-filter').addEventListener('input', renderItems);
+function renderItems() {
+  var list = filteredItems();
+  var bulk = state.bulk;
+  $('i-count').textContent = '(' + state.items.length + ')';
+  var lastCat = null, html = '';
+  list.forEach(function (i) {
+    var cat = i.category || '분류 없음';
+    if (cat !== lastCat) {
+      html += '<tr><td colspan="5" style="background:var(--panel2);font-weight:700;color:var(--accent)">' + esc(cat) + '</td></tr>';
+      lastCat = cat;
+    }
+    var priceCell;
+    if (bulk) {
+      var v = bulk[i.id] !== undefined ? bulk[i.id] : i.price;
+      var changed = bulk[i.id] !== undefined && Number(bulk[i.id]) !== i.price;
+      priceCell = '<td class="num"><input type="number" min="0" step="1" data-bulk="' + esc(i.id) + '" value="' + esc(v) + '" style="width:110px;padding:5px 8px;text-align:right' +
+        (changed ? ';border-color:var(--accent)' : '') + '">' +
+        (changed ? '<div class="muted" style="font-size:11px">기존 ' + won(i.price) + '</div>' : '') + '</td>';
+    } else {
+      priceCell = '<td class="num price">' + won(i.price) + '</td>';
+    }
+    html += '<tr><td>' + esc(i.name) + '</td><td>' + esc(i.category) + '</td>' + priceCell + '<td class="muted">' + esc(i.memo) +
+      '</td><td class="num"><div class="row" style="justify-content:flex-end">' +
+      (bulk ? '' : '<button class="sm" onclick="editItem(\'' + i.id + '\')">수정</button>' +
+      '<button class="sm no" onclick="deleteItem(\'' + i.id + '\')">삭제</button>') + '</div></td></tr>';
+  });
+  $('i-list').innerHTML = html || '<tr><td colspan="5" class="empty">아이템이 없습니다.</td></tr>';
+  updateBulkCount();
+}
+
+/* ---------- 가격 일괄 수정 ---------- */
+$('i-list').addEventListener('input', function (e) {
+  var id = e.target.getAttribute && e.target.getAttribute('data-bulk');
+  if (!id || !state.bulk) return;
+  state.bulk[id] = e.target.value;
+  var item = state.items.filter(function (x) { return x.id === id; })[0];
+  e.target.style.borderColor = item && Number(e.target.value) !== item.price ? 'var(--accent)' : '';
+  updateBulkCount();
+});
+function bulkChanges() {
+  if (!state.bulk) return [];
+  return state.items.filter(function (i) {
+    var v = state.bulk[i.id];
+    return v !== undefined && v !== '' && Number(v) !== i.price;
+  }).map(function (i) { return { id: i.id, price: Number(state.bulk[i.id]) }; });
+}
+function updateBulkCount() { if (state.bulk) $('b-count').textContent = '변경 ' + bulkChanges().length + '건'; }
+function toggleBulk() {
+  if (state.bulk && bulkChanges().length && !confirm('저장하지 않은 변경 ' + bulkChanges().length + '건이 있습니다. 닫을까요?')) return;
+  state.bulk = state.bulk ? null : {};
+  $('b-bar').classList.toggle('hidden', !state.bulk);
+  $('b-toggle').classList.toggle('primary', !!state.bulk);
+  renderItems();
+}
+function applyPct() {
+  var pct = Number($('b-pct').value);
+  if (isNaN(pct) || pct < 0) return toast('비율을 숫자로 입력하세요.', true);
+  var list = filteredItems();
+  list.forEach(function (i) { state.bulk[i.id] = String(Math.round(i.price * pct / 100)); });
+  renderItems();
+  toast(list.length + '개 항목에 ' + pct + '% 적용 (저장 전)');
+}
+function resetBulk() { state.bulk = {}; renderItems(); }
+function saveBulk() {
+  var changes = bulkChanges();
+  if (!changes.length) return toast('변경된 가격이 없습니다.', true);
+  if (changes.some(function (c) { return isNaN(c.price) || c.price < 0; })) return toast('가격이 올바르지 않은 항목이 있습니다.', true);
+  if (!confirm(changes.length + '개 아이템 가격을 저장할까요?')) return;
+  $('b-save').disabled = true;
+  call('savePrices', { changes: changes }).then(function (n) {
+    toast(n + '개 가격을 저장했습니다.');
+    state.bulk = {};
+    return loadItems();
+  }).catch(function () {}).then(function () { $('b-save').disabled = false; });
+}
+
+function saveItem() {
+  call('saveItem', { id: $('i-id').value, name: $('i-name').value, price: $('i-price').value, category: $('i-cat').value, memo: $('i-memo').value })
+    .then(function () { toast('저장했습니다.'); resetItemForm(); loadItems(); $('i-name').focus(); }).catch(function () {});
+}
+function editItem(id) {
+  var i = state.items.filter(function (x) { return x.id === id; })[0]; if (!i) return;
+  $('i-id').value = i.id; $('i-name').value = i.name; $('i-price').value = i.price; $('i-cat').value = i.category || ''; $('i-memo').value = i.memo || '';
+  $('i-title').textContent = '아이템 수정'; $('i-cancel').classList.remove('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function resetItemForm() {
+  ['i-id', 'i-name', 'i-price', 'i-cat', 'i-memo'].forEach(function (k) { $(k).value = ''; });
+  $('i-title').textContent = '아이템 등록'; $('i-cancel').classList.add('hidden');
+}
+function deleteItem(id) {
+  if (!confirm('이 아이템을 DB에서 삭제할까요? (이미 등록된 경매에는 영향 없음)')) return;
+  call('deleteItem', { id: id }).then(function () { toast('삭제했습니다.'); loadItems(); }).catch(function () {});
+}
+
+/* ---------- 길드원 (길마) ---------- */
+function loadMembers() {
+  return call('listMembers').then(function (list) { state.members = list; renderMembers(); }).catch(function () {});
+}
+function renderMembers() {
+  $('m-count').textContent = '(' + state.members.length + ')';
+  $('m-list').innerHTML = state.members.map(function (m, idx) {
+    var isMe = m.nickname === state.user.nickname;
+    var isM = m.role === '길마';
+    return '<tr><td>' + esc(m.nickname) + (isMe ? ' <span class="muted">(나)</span>' : '') + '</td>' +
+      '<td><select style="min-width:120px;padding:5px 8px" onchange="setMemberJob(' + idx + ', this.value)">' + jobOptions(m.job, '미설정') + '</select></td>' +
+      '<td><span class="badge' + (isM ? ' master' : '') + '">' + esc(m.role) + '</span></td>' +
+      '<td>' + (m.hasPassword ? '설정됨' : '<span class="muted">미설정</span>') + '</td>' +
+      '<td class="muted">' + fmtDate(m.lastLogin) + '</td>' +
+      '<td class="num"><div class="row" style="justify-content:flex-end">' +
+        (isMe ? '' :
+          '<button class="sm" onclick="memberAct(' + idx + ',\'role\')">' + (isM ? '길드원으로' : '길마로') + '</button>' +
+          '<button class="sm" onclick="memberAct(' + idx + ',\'reset\')">비번 초기화</button>' +
+          '<button class="sm no" onclick="memberAct(' + idx + ',\'delete\')">삭제</button>') +
+      '</div></td></tr>';
+  }).join('');
+}
+function memberAct(idx, kind) {
+  var m = state.members[idx]; if (!m) return;
+  var p;
+  if (kind === 'reset') {
+    if (!confirm(m.nickname + ' 님의 비밀번호를 초기화할까요? 다음 로그인 때 새 비밀번호를 정하게 됩니다.')) return;
+    p = call('resetPassword', { nickname: m.nickname });
+  } else if (kind === 'role') {
+    var role = m.role === '길마' ? '길드원' : '길마';
+    if (!confirm(m.nickname + ' 님을 ' + role + '(으)로 변경할까요?')) return;
+    p = call('setRole', { nickname: m.nickname, role: role });
+  } else {
+    if (!confirm(m.nickname + ' 님을 삭제할까요?')) return;
+    p = call('deleteMember', { nickname: m.nickname });
+  }
+  p.then(function () { toast('처리했습니다.'); loadMembers(); }).catch(function () {});
+}
+function addMembers() {
+  call('addMembers', { nicknames: $('m-names').value }).then(function (r) {
+    $('m-names').value = '';
+    toast(r.added.length + '명 등록' + (r.skipped.length ? ', 중복 ' + r.skipped.length + '명 건너뜀' : ''));
+    loadMembers();
+  }).catch(function () {});
+}
+
+function setMemberJob(idx, job) {
+  var m = state.members[idx]; if (!m) return;
+  call('setJob', { nickname: m.nickname, job: job }).then(function () {
+    m.job = job; toast(m.nickname + ' 님 직업: ' + (job || '미설정'));
+    if (m.nickname === state.user.nickname) { state.user.job = job; renderMyJob(); }
+  }).catch(function () { loadMembers(); });
+}
+
+/* ---------- 내 정보 ---------- */
+function renderMyJob() {
+  var job = state.user.job || '';
+  $('me-job').textContent = job ? job : '';
+  $('p-job').innerHTML = jobOptions(job);
+  $('job-notice').classList.toggle('hidden', !!job);
+}
+function saveMyJob() {
+  var job = $('p-job').value;
+  if (!job) return toast('직업을 선택하세요.', true);
+  call('setMyJob', { job: job }).then(function () {
+    state.user.job = job; renderMyJob(); toast('직업을 ' + job + '(으)로 저장했습니다.');
+  }).catch(function () {});
+}
+function changePassword() {
+  if ($('p-new').value !== $('p-new2').value) return toast('새 비밀번호 확인이 일치하지 않습니다.', true);
+  call('changePassword', { oldPassword: $('p-old').value, newPassword: $('p-new').value }).then(function () {
+    toast('비밀번호를 변경했습니다.'); ['p-old', 'p-new', 'p-new2'].forEach(function (k) { $(k).value = ''; });
+  }).catch(function () {});
+}
+
+/* ---------- 시작 ---------- */
+(function init() {
+  var t = load(TOKEN_KEY);
+  if (!t) return show('login');
+  state.token = t;
+  call('me', {}, true).then(function (user) { state.user = user; startApp(); })
+    .catch(function () { state.token = null; store(TOKEN_KEY, null); show('login'); });
+})();
+</script>
+</body>
+</html>
