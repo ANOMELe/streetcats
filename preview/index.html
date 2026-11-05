@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ffd986">
+<meta name="robots" content="noindex"><title>[미리보기] 길냥이집 경매장</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🐾%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #3b2a20;
+    --bg: #ffe3a0; --bg2: #ffd683;
+    --panel: #fffaf0; --panel2: #fff0cc; --line: #ecd3a0;
+    --text: #3b2a20; --muted: #8a6f55;
+    --accent: #f59e2b; --accent-ink: #3b2a20;
+    --ok: #74b94f; --no: #e8604c; --sky: #8ec5e8;
+    --shadow: 0 5px 0 var(--ink);
+    --hand: "Jua", "Nanum Gothic", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0; color: var(--text); min-height: 100vh;
+    font: 15px/1.55 "Nanum Gothic", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background-color: var(--bg);
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='%233b2a20' fill-opacity='.06'%3E%3Cg transform='translate(40 48) rotate(-18)'%3E%3Cellipse cx='0' cy='8' rx='11' ry='9'/%3E%3Ccircle cx='-11' cy='-6' r='4.5'/%3E%3Ccircle cx='-4' cy='-12' r='4.5'/%3E%3Ccircle cx='4' cy='-12' r='4.5'/%3E%3Ccircle cx='11' cy='-6' r='4.5'/%3E%3C/g%3E%3Cg transform='translate(130 128) rotate(22)'%3E%3Cellipse cx='0' cy='8' rx='11' ry='9'/%3E%3Ccircle cx='-11' cy='-6' r='4.5'/%3E%3Ccircle cx='-4' cy='-12' r='4.5'/%3E%3Ccircle cx='4' cy='-12' r='4.5'/%3E%3Ccircle cx='11' cy='-6' r='4.5'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+      repeating-linear-gradient(-32deg, rgba(255,255,255,.22) 0 36px, rgba(255,255,255,0) 36px 72px);
+  }
+  .wrap { position: relative; z-index: 1; max-width: 940px; margin: 0 auto; padding: 18px 16px 60px; }
+  h1, h2, h3, .hand { font-family: var(--hand); font-weight: 400; letter-spacing: .2px; }
+  h1 { font-size: 24px; margin: 0; }
+  h2 { font-size: 20px; margin: 0 0 12px; }
+  .hidden { display: none !important; }
+  .muted { color: var(--muted); font-size: 13px; }
+  b { font-weight: 800; }
+
+  /* ---------- 카드 / 폼 ---------- */
+  .card { position: relative; background: var(--panel); border: 3px solid var(--ink); border-radius: 22px;
+    padding: 18px; margin-bottom: 20px; box-shadow: var(--shadow); }
+  label { display: block; font-size: 13px; font-weight: 700; color: var(--muted); margin: 12px 0 5px; }
+  input, select, textarea { width: 100%; padding: 11px 13px; border-radius: 14px; border: 2.5px solid var(--ink);
+    background: #fffdf8; color: var(--text); font: inherit; font-weight: 700; }
+  input::placeholder, textarea::placeholder { color: #bba58a; font-weight: 400; }
+  select[size] { padding: 6px; }
+  select[size] option { padding: 7px 8px; border-radius: 8px; }
+  select[size] option:checked { background: var(--accent) linear-gradient(var(--accent), var(--accent)); color: var(--ink); }
+  textarea { min-height: 100px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); outline-offset: 1px; }
+
+  button { font: 16px var(--hand); border: 2.5px solid var(--ink); border-radius: 14px; padding: 9px 16px; cursor: pointer;
+    background: #fff; color: var(--ink); white-space: nowrap; box-shadow: 0 3px 0 var(--ink);
+    transition: transform .06s, box-shadow .06s, filter .1s; }
+  button:hover { filter: brightness(1.05); }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+  button:disabled { opacity: .45; cursor: default; transform: none; box-shadow: 0 3px 0 var(--ink); }
+  button.primary { background: var(--accent); }
+  button.ok { background: var(--ok); color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,.25); }
+  button.no { background: #fff; color: var(--no); }
+  button.sm { padding: 5px 11px; font-size: 14px; border-radius: 11px; box-shadow: 0 2px 0 var(--ink); }
+  button.sm:active { box-shadow: 0 0 0 var(--ink); }
+  button.big { font-size: 20px; padding: 12px 18px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .grow { flex: 1 1 160px; min-width: 0; }
+  .full { width: 100%; margin-top: 16px; }
+
+  /* ---------- 로그인 ---------- */
+  .login-box { max-width: 400px; margin: 0 auto; padding-top: 120px; }
+  .login-box .card { padding: 28px 22px 22px; text-align: center; }
+  .login-box form { text-align: left; }
+  .peek { position: absolute; left: 50%; top: -104px; width: 150px; transform: translateX(-50%); }
+  .peek svg { display: block; width: 100%; height: auto; }
+  .paws { position: absolute; top: -17px; left: 50%; width: 150px; transform: translateX(-50%); display: flex; justify-content: space-between; padding: 0 14px; }
+  .paws svg { width: 42px; height: auto; }
+  .login-title { font-family: var(--hand); font-size: 38px; margin: 6px 0 2px; }
+  .login-title .paw { color: var(--accent); }
+  .login-desc { color: var(--muted); margin: 4px 0 6px; }
+  .speech { display: inline-block; background: #fff; border: 2.5px solid var(--ink); border-radius: 16px; padding: 6px 12px;
+    font-family: var(--hand); font-size: 15px; position: relative; margin-bottom: 6px; }
+
+  /* ---------- 헤더 / 탭 ---------- */
+  header.top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand .logo { width: 52px; }
+  .brand .logo svg { display: block; width: 100%; height: auto; }
+  .brand h1 { font-size: 26px; line-height: 1.1; }
+  .brand small { display: block; font-family: "Nanum Gothic", sans-serif; font-size: 12px; color: var(--muted); font-weight: 700; }
+  .userchip { display: flex; align-items: center; gap: 6px; background: var(--panel); border: 2.5px solid var(--ink);
+    border-radius: 99px; padding: 4px 6px 4px 14px; box-shadow: 0 3px 0 var(--ink); font-weight: 800; }
+  nav.tabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 18px; padding: 6px; background: var(--panel);
+    border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 4px 0 var(--ink); scrollbar-width: none; }
+  nav.tabs::-webkit-scrollbar { display: none; }
+  nav.tabs button { box-shadow: none; border-color: transparent; background: transparent; color: var(--muted); padding: 7px 14px; font-size: 16px; border-radius: 12px; }
+  nav.tabs button:active { transform: none; }
+  nav.tabs button.on { background: var(--accent); color: var(--ink); border-color: var(--ink); box-shadow: 0 2px 0 var(--ink); }
+
+  /* ---------- 탭 머리말 ---------- */
+  .hero { display: flex; align-items: center; gap: 14px; margin: 4px 0 16px; }
+  .hero .cat { width: 78px; flex: none; }
+  .hero .cat svg { display: block; width: 100%; height: auto; }
+  .hero h2 { font-size: 28px; margin: 0; line-height: 1.15; }
+  .hero p { margin: 3px 0 0; color: var(--muted); font-weight: 700; font-size: 14px; }
+  .hero .spacer { flex: 1; }
+
+  /* ---------- 배지 / 칩 ---------- */
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 99px; font: 13px var(--hand);
+    background: #fff; border: 2px solid var(--ink); }
+  .badge.master { background: var(--accent); }
+  .badge.active { background: var(--ok); color: #fff; }
+  .badge.closed { background: #eee3d0; color: var(--muted); }
+  .badge.join { background: var(--ok); color: #fff; }
+  .badge.decline { background: #fff; color: var(--no); }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip { padding: 3px 10px; border-radius: 99px; background: #fff; font-size: 13px; font-weight: 700; border: 2px solid var(--line); }
+  .chip.me { border-color: var(--accent); background: #fff3dc; }
+  .chip.win { background: var(--accent); border-color: var(--ink); }
+
+  /* ---------- 경매 카드 ---------- */
+  .auction { display: grid; gap: 12px; }
+  .auction .title { font: 22px var(--hand); }
+  .price { color: #d7701c; font-family: var(--hand); font-variant-numeric: tabular-nums; }
+  .tag { display: inline-flex; align-items: center; gap: 4px; background: #fff3c4; border: 2.5px solid var(--ink); border-radius: 99px;
+    padding: 2px 12px; font: 20px var(--hand); color: var(--ink); }
+  .tag::before { content: ""; width: 14px; height: 14px; border-radius: 50%; background: #f7c948; border: 2px solid var(--ink); }
+  .auction .ribbon { position: absolute; top: -14px; right: 18px; }
+
+  /* ---------- 표 ---------- */
+  table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  th, td { text-align: left; padding: 9px 8px; border-bottom: 2px dashed var(--line); vertical-align: middle; }
+  th { background: var(--panel2); color: var(--muted); font-size: 12px; font-weight: 800; border-bottom: 2.5px solid var(--ink); }
+  th:first-child { border-top-left-radius: 12px; } th:last-child { border-top-right-radius: 12px; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.price { font-size: 17px; }
+  .table-scroll { overflow-x: auto; }
+  .pricebox { display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    background: var(--panel2); border: 2.5px dashed var(--ink); border-radius: 14px; padding: 10px 14px; margin-top: 12px; }
+  .pricebox .big { font-size: 26px; }
+  .empty { text-align: center; color: var(--muted); padding: 18px 8px; font-weight: 700; }
+  .empty .cat { width: 120px; margin: 0 auto 6px; }
+  .empty .cat svg { width: 100%; height: auto; display: block; }
+  .empty .hand { font-size: 19px; color: var(--ink); }
+
+  /* ---------- 토스트 / 로딩 ---------- */
+  #toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); background: var(--ink); color: #fff8ec;
+    padding: 11px 18px; border-radius: 16px; z-index: 99; max-width: 90vw; font: 16px var(--hand); box-shadow: 0 4px 0 rgba(0,0,0,.25); }
+  #toast.err { background: var(--no); border: 2.5px solid var(--ink); }
+  #loading { position: fixed; top: 0; left: 0; height: 5px; width: 100%; background: var(--accent); border-bottom: 2px solid var(--ink);
+    animation: load 1s infinite; z-index: 100; }
+  @keyframes load { 0% { transform: scaleX(0); transform-origin: left; } 50% { transform: scaleX(1); transform-origin: left; }
+    51% { transform-origin: right; } 100% { transform: scaleX(0); transform-origin: right; } }
+  details summary { cursor: pointer; font: 18px var(--hand); }
+  details[open] summary { margin-bottom: 6px; }
+
+  /* ---------- 장식 ---------- */
+  .deco { position: fixed; z-index: 0; pointer-events: none; opacity: .95; }
+  .deco svg { display: block; width: 100%; height: auto; }
+  @keyframes bob { 0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); } 50% { transform: translateY(-6px) rotate(var(--r, 0deg)); } }
+  .deco.leaf { width: 46px; animation: bob 5s ease-in-out infinite; }
+  @keyframes wiggle { 0%, 92%, 100% { transform: rotate(0); } 95% { transform: rotate(-4deg); } 98% { transform: rotate(4deg); } }
+  .peek svg, .hero .cat svg { animation: wiggle 6s ease-in-out infinite; transform-origin: 50% 90%; }
+  @media (prefers-reduced-motion: reduce) { .deco.leaf, .peek svg, .hero .cat svg { animation: none; } }
+  @media (max-width: 560px) {
+    .hero .cat { width: 62px; }
+    .hero h2 { font-size: 23px; }
+    .brand h1 { font-size: 21px; }
+    .brand .logo { width: 42px; }
+    .deco.side { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="loading" class="hidden"></div>
+<div id="toast" class="hidden"></div>
+<div id="decor"></div>
+
+<div class="wrap">
+  <!-- 로그인 -->
+  <section id="v-login" class="login-box hidden">
+    <div class="card">
+      <div class="peek" data-cat="orange" data-face="open"></div>
+      <div class="paws" data-paws="orange"></div>
+      <div class="login-title">로그인이냥<span class="paw">🐾</span></div>
+      <p class="login-desc">길마가 등록해준 <b>닉네임</b>으로 들어와라냥.<br>처음 왔으면 비밀번호는 비워두고 눌러라냥!</p>
+      <form id="f-login">
+        <label>닉네임</label><input id="l-nick" autocomplete="username" required placeholder="게임 닉네임">
+        <label>비밀번호</label><input id="l-pw" type="password" autocomplete="current-password" placeholder="처음이면 비워두라냥">
+        <button class="primary full big" type="submit">들어가기냥</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- 최초 비밀번호 설정 -->
+  <section id="v-setpw" class="login-box hidden">
+    <div class="card">
+      <div class="peek" data-cat="siamese" data-face="happy"></div>
+      <div class="paws" data-paws="siamese"></div>
+      <div class="login-title">비밀번호 정하자냥</div>
+      <p class="login-desc"><b id="s-nick"></b> 님, 처음 왔구냥!<br>앞으로 쓸 비밀번호를 정해줘냥.</p>
+      <form id="f-setpw">
+        <label>새 비밀번호 (4자 이상)</label><input id="s-pw" type="password" autocomplete="new-password" required minlength="4">
+        <label>한 번 더 입력</label><input id="s-pw2" type="password" autocomplete="new-password" required minlength="4">
+        <button class="primary full big" type="submit">정하고 시작하기냥</button>
+        <button class="full" type="button" onclick="show('login')">돌아가기</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- 메인 -->
+  <section id="v-app" class="hidden">
+    <header class="top">
+      <div class="brand">
+        <div class="logo" data-cat="orange" data-face="happy"></div>
+        <div><h1>길냥이집 경매장</h1><small>길드 레이드 아이템 경매</small></div>
+      </div>
+      <div class="userchip">
+        <span id="me-nick"></span><span id="me-job" class="muted"></span><span id="me-role" class="badge"></span>
+        <button class="sm" onclick="logout()">나가기</button>
+      </div>
+    </header>
+    <nav class="tabs" id="tabs"></nav>
+
+    <!-- 길드원: 경매 -->
+    <div id="t-auction" class="tab">
+      <div class="hero">
+        <div class="cat" data-cat="black" data-face="open"></div>
+        <div><h2>경매에 참여할거냥?</h2><p>열려 있는 아이템마다 참여할지 패스할지 골라줘냥.</p></div>
+        <div class="spacer"></div>
+        <button class="sm" onclick="loadAuctions()">새로고침</button>
+      </div>
+      <div id="job-notice" class="card hidden" style="background:#fff3dc">
+        <div class="row" style="justify-content:space-between">
+          <span class="hand" style="font-size:18px">아직 직업을 안 정했다냥!</span>
+          <button class="sm primary" onclick="setTab('me')">직업 정하러 가기</button>
+        </div>
+      </div>
+      <div id="active-list"></div>
+      <details class="card"><summary>지난 경매 보기</summary><div id="closed-list" style="margin-top:12px"></div></details>
+    </div>
+
+    <!-- 길마: 경매 관리 -->
+    <div id="t-manage" class="tab hidden">
+      <div class="hero">
+        <div class="cat" data-cat="siamese" data-face="open"></div>
+        <div><h2>경매를 열어보자냥</h2><p>아이템을 고르면 가격은 창고에서 알아서 불러온다냥.</p></div>
+      </div>
+      <div class="card">
+        <h2>새 경매 열기</h2>
+        <label>아이템 찾기</label>
+        <input id="a-search" placeholder="이름이나 분류로 찾아라냥 (예: 레인저, 공용)">
+        <label>아이템 고르기</label>
+        <select id="a-item" size="6"></select>
+        <div id="a-pricebox" class="pricebox hidden">
+          <span><span id="a-name" class="hand" style="font-size:18px"></span> <span class="muted" id="a-cat"></span></span>
+          <span class="muted">창고 가격 <span class="price big" id="a-dbprice"></span></span>
+        </div>
+        <div class="row">
+          <div class="grow"><label>경매 가격 (자동 입력, 바꿔도 된다냥)</label><input id="a-price" type="number" min="0" step="1"></div>
+          <div class="grow"><label>메모 (선택)</label><input id="a-memo" placeholder="예: 1넴 드랍"></div>
+        </div>
+        <button class="primary full big" id="a-submit" onclick="createAuction()">경매 열기냥!</button>
+      </div>
+      <div class="row" style="justify-content:space-between;margin-bottom:12px">
+        <h2 style="margin:0">경매 목록</h2>
+        <button class="sm" onclick="loadAuctions()">새로고침</button>
+      </div>
+      <div id="manage-list"></div>
+    </div>
+
+    <!-- 길마: 아이템 DB -->
+    <div id="t-items" class="tab hidden">
+      <div class="hero">
+        <div class="cat" data-cat="gray" data-face="happy"></div>
+        <div><h2>아이템 창고다냥</h2><p>경매에 쓸 아이템과 기본 가격을 넣어두는 곳이다냥.</p></div>
+      </div>
+      <div class="card">
+        <h2 id="i-title">아이템 넣기</h2>
+        <input type="hidden" id="i-id">
+        <div class="row">
+          <div class="grow"><label>아이템명</label><input id="i-name" placeholder="예: 5T 투구"></div>
+          <div class="grow"><label>가격</label><input id="i-price" type="number" min="0" step="1"></div>
+        </div>
+        <div class="row">
+          <div class="grow"><label>분류 (선택)</label><input id="i-cat" placeholder="예: 주무기, 보조무기, 공용"></div>
+          <div class="grow"><label>메모 (선택)</label><input id="i-memo"></div>
+        </div>
+        <div class="row" style="margin-top:16px">
+          <button class="primary grow" onclick="saveItem()">저장하기냥</button>
+          <button id="i-cancel" class="hidden" onclick="resetItemForm()">취소</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row" style="justify-content:space-between;margin-bottom:10px">
+          <h2 style="margin:0">창고 목록 <span class="muted" id="i-count"></span></h2>
+          <div class="row">
+            <input id="i-filter" placeholder="찾기" style="max-width:180px">
+            <button class="sm" id="b-toggle" onclick="toggleBulk()">가격 한꺼번에 고치기</button>
+          </div>
+        </div>
+        <div id="b-bar" class="pricebox hidden" style="flex-wrap:wrap;margin:0 0 12px">
+          <div class="row">
+            <span class="muted">찾은 항목 가격에</span>
+            <input id="b-pct" type="number" value="100" min="0" step="1" style="width:90px;padding:6px 8px">
+            <span class="muted">% 적용</span>
+            <button class="sm" onclick="applyPct()">적용</button>
+            <button class="sm" onclick="resetBulk()">되돌리기</button>
+          </div>
+          <div class="row">
+            <span class="muted" id="b-count">변경 0건</span>
+            <button class="sm primary" id="b-save" onclick="saveBulk()">한꺼번에 저장</button>
+            <button class="sm" onclick="toggleBulk()">닫기</button>
+          </div>
+        </div>
+        <div class="table-scroll"><table>
+          <thead><tr><th>아이템명</th><th>분류</th><th class="num">가격</th><th>메모</th><th></th></tr></thead>
+          <tbody id="i-list"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- 길마: 길드원 -->
+    <div id="t-members" class="tab hidden">
+      <div class="hero">
+        <div class="cat" data-cat="white" data-face="happy"></div>
+        <div><h2>우리 길드 냥이들</h2><p>길드원 닉네임을 등록하고 직업·권한을 관리하라냥.</p></div>
+      </div>
+      <div class="card">
+        <h2>새 냥이 등록</h2>
+        <p class="muted">한 줄에 한 명씩 <b>닉네임 직업</b>으로 적어라냥 (직업은 생략 가능). 시트에서 두 열을 복사해 붙여넣어도 된다냥. 등록된 냥이는 처음 로그인할 때 비밀번호를 직접 정한다냥.</p>
+        <p class="muted" id="m-jobs"></p>
+        <textarea id="m-names" placeholder="닉네임1 나이트&#10;닉네임2 오라클&#10;닉네임3"></textarea>
+        <button class="primary full" onclick="addMembers()">등록하기냥</button>
+      </div>
+      <div class="card">
+        <h2>길드원 목록 <span class="muted" id="m-count"></span></h2>
+        <div class="table-scroll"><table>
+          <thead><tr><th>닉네임</th><th>직업</th><th>권한</th><th>비밀번호</th><th>최근 로그인</th><th></th></tr></thead>
+          <tbody id="m-list"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- 내 정보 -->
+    <div id="t-me" class="tab hidden">
+      <div class="hero">
+        <div class="cat" data-cat="orange" data-face="wink"></div>
+        <div><h2>내 정보다냥</h2><p>직업이랑 비밀번호를 바꿀 수 있다냥.</p></div>
+      </div>
+      <div class="row" style="align-items:flex-start;gap:20px">
+        <div class="card grow" style="max-width:440px">
+          <h2>내 직업</h2>
+          <div class="row">
+            <select id="p-job" class="grow"></select>
+            <button class="primary" onclick="saveMyJob()">저장</button>
+          </div>
+        </div>
+        <div class="card grow" style="max-width:440px">
+          <h2>비밀번호 바꾸기</h2>
+          <label>지금 비밀번호</label><input id="p-old" type="password" autocomplete="current-password">
+          <label>새 비밀번호 (4자 이상)</label><input id="p-new" type="password" autocomplete="new-password">
+          <label>한 번 더 입력</label><input id="p-new2" type="password" autocomplete="new-password">
+          <button class="primary full" onclick="changePassword()">바꾸기냥</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+var state = { token: null, user: null, auctions: [], items: [], members: [], tab: 'auction', timer: null, bulk: null };
+var TOKEN_KEY = 'guildAuctionTokenDemo';
+var API_URL = 'https://script.google.com/macros/s/AKfycbxXhBPqLJu1UD2ncq0hQbjj6enVpckAauDxdQrpU3KFJuTv1r_L7XkgSb7ijHrfIHZXCA/exec';
+var JOBS = ['나이트', '버서커', '어쌔신', '레인저', '엘리멘탈리스트', '오라클', '블레스드', '아티산'];
+function jobOptions(sel, emptyLabel) {
+  return '<option value="">' + (emptyLabel || '직업 선택') + '</option>' + JOBS.map(function (j) {
+    return '<option' + (j === sel ? ' selected' : '') + '>' + j + '</option>'; }).join('');
+}
+
+/* ---------- 고양이 아트 (직접 그린 SVG) ---------- */
+var INK = '#3b2a20';
+var CAT_COLORS = {
+  orange:  { fur: '#f6a945', dark: '#d9822b', ear: '#ffc2a1', eye: '#3b2a20', stripes: true },
+  black:   { fur: '#3d3544', dark: '#2a2430', ear: '#e98fa0', eye: '#f7c948', stripes: false },
+  gray:    { fur: '#a3acb7', dark: '#6e7782', ear: '#f2b8b8', eye: '#3b2a20', stripes: true },
+  white:   { fur: '#fff8ee', dark: '#f2c27c', ear: '#ffc9c9', eye: '#3b2a20', patch: true },
+  siamese: { fur: '#f3ddb3', dark: '#7a5038', ear: '#7a5038', eye: '#4f86c6', mask: true }
+};
+
+function catSVG(kind, face) {
+  var c = CAT_COLORS[kind] || CAT_COLORS.orange;
+  var s = 'stroke="' + INK + '" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
+  var eyeOpen = function (x) {
+    return '<circle cx="' + x + '" cy="62" r="9.5" fill="' + c.eye + '" ' + s.replace('4"', '3"') + '/>' +
+      '<ellipse cx="' + x + '" cy="62" rx="3.2" ry="6.5" fill="' + INK + '"/>' +
+      '<circle cx="' + (x + 3.5) + '" cy="57.5" r="2.8" fill="#fff"/>';
+  };
+  var eyeHappy = function (x) { return '<path d="M' + (x - 8) + ' 64 Q' + x + ' 54 ' + (x + 8) + ' 64" fill="none" ' + s + '/>'; };
+  var eyeSleep = function (x) { return '<path d="M' + (x - 8) + ' 61 Q' + x + ' 69 ' + (x + 8) + ' 61" fill="none" ' + s + '/>'; };
+  var eyes = {
+    open: eyeOpen(42) + eyeOpen(78),
+    happy: eyeHappy(42) + eyeHappy(78),
+    sleep: eyeSleep(42) + eyeSleep(78),
+    wink: eyeHappy(42) + eyeOpen(78)
+  }[face || 'open'];
+  var whisker = kind === 'black' ? '#fff3e0' : INK;
+  return '<svg viewBox="0 0 120 106" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+    // 귀
+    '<path d="M22 52 L18 12 Q20 6 26 9 L58 30 Z" fill="' + (c.mask ? c.dark : c.fur) + '" ' + s + '/>' +
+    '<path d="M98 52 L102 12 Q100 6 94 9 L62 30 Z" fill="' + (c.mask ? c.dark : c.fur) + '" ' + s + '/>' +
+    '<path d="M27 40 L25 18 L45 31 Z" fill="' + (c.mask ? '#a87458' : c.ear) + '"/>' +
+    '<path d="M93 40 L95 18 L75 31 Z" fill="' + (c.mask ? '#a87458' : c.ear) + '"/>' +
+    // 얼굴
+    '<path d="M12 68 C12 38 34 25 60 25 C86 25 108 38 108 68 C108 92 88 102 60 102 C32 102 12 92 12 68 Z" fill="' + c.fur + '" ' + s + '/>' +
+    (c.stripes ? '<path d="M60 28 L60 41 M47 30 L50 41 M73 30 L70 41" fill="none" stroke="' + c.dark + '" stroke-width="4.5" stroke-linecap="round"/>' +
+      '<path d="M14 62 L25 64 M15 72 L25 72 M106 62 L95 64 M105 72 L95 72" fill="none" stroke="' + c.dark + '" stroke-width="4" stroke-linecap="round"/>' : '') +
+    (c.patch ? '<path d="M66 28 C88 28 104 40 106 60 C94 60 78 52 66 28 Z" fill="' + c.dark + '"/>' : '') +
+    (c.mask ? '<ellipse cx="60" cy="77" rx="25" ry="19" fill="' + c.dark + '" opacity=".75"/>' : '') +
+    // 볼터치
+    '<ellipse cx="30" cy="78" rx="7.5" ry="4.5" fill="#ff8f8f" opacity=".5"/>' +
+    '<ellipse cx="90" cy="78" rx="7.5" ry="4.5" fill="#ff8f8f" opacity=".5"/>' +
+    eyes +
+    // 코, 입
+    '<path d="M55.5 72 L64.5 72 L60 77.5 Z" fill="#ef8fa0" stroke="' + INK + '" stroke-width="2.5" stroke-linejoin="round"/>' +
+    '<path d="M51 81 Q55.5 86.5 60 81 Q64.5 86.5 69 81" fill="none" stroke="' + INK + '" stroke-width="3" stroke-linecap="round"/>' +
+    // 수염
+    '<path d="M4 71 L22 74 M6 83 L23 80 M116 71 L98 74 M114 83 L97 80" fill="none" stroke="' + whisker + '" stroke-width="2.5" stroke-linecap="round"/>' +
+    (face === 'sleep' ? '<text x="98" y="30" font-family="Jua, sans-serif" font-size="18" fill="' + INK + '">z</text><text x="108" y="16" font-family="Jua, sans-serif" font-size="13" fill="' + INK + '">z</text>' : '') +
+    '</svg>';
+}
+
+function pawSVG(kind) {
+  var c = CAT_COLORS[kind] || CAT_COLORS.orange;
+  var fur = c.mask ? c.dark : c.fur;
+  return '<svg viewBox="0 0 44 30" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+    '<path d="M3 29 C3 12 11 3 22 3 C33 3 41 12 41 29" fill="' + fur + '" stroke="' + INK + '" stroke-width="3.5" stroke-linejoin="round"/>' +
+    '<path d="M15.5 10 L15.5 19 M28.5 10 L28.5 19" fill="none" stroke="' + INK + '" stroke-width="3" stroke-linecap="round"/></svg>';
+}
+
+function leafSVG(color) {
+  return '<svg viewBox="0 0 44 26" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+    '<path d="M3 13 C11 1 32 0 41 13 C32 26 11 25 3 13 Z" fill="' + (color || '#7bb662') + '" stroke="' + INK + '" stroke-width="2.8" stroke-linejoin="round"/>' +
+    '<path d="M8 13 Q22 10 36 13" fill="none" stroke="' + INK + '" stroke-width="2.2" stroke-linecap="round"/></svg>';
+}
+
+function emptyState(text, kind) {
+  return '<div class="empty"><div class="cat">' + catSVG(kind || 'gray', 'sleep') + '</div><div class="hand">' + text + '</div></div>';
+}
+
+function drawArt(root) {
+  (root || document).querySelectorAll('[data-cat]').forEach(function (el) {
+    if (!el.firstChild) el.innerHTML = catSVG(el.getAttribute('data-cat'), el.getAttribute('data-face'));
+  });
+  (root || document).querySelectorAll('[data-paws]').forEach(function (el) {
+    if (!el.firstChild) el.innerHTML = pawSVG(el.getAttribute('data-paws')) + pawSVG(el.getAttribute('data-paws'));
+  });
+}
+
+function drawDecor() {
+  var spots = [
+    { l: '3%', t: '12%', r: -25, c: '#7bb662' }, { l: '92%', t: '8%', r: 30, c: '#9ccc65' },
+    { l: '6%', t: '70%', r: 40, c: '#9ccc65' }, { l: '90%', t: '62%', r: -40, c: '#7bb662' },
+    { l: '48%', t: '94%', r: 10, c: '#7bb662' }
+  ];
+  $('decor').innerHTML = spots.map(function (p, i) {
+    return '<div class="deco leaf' + (i < 4 ? ' side' : '') + '" style="left:' + p.l + ';top:' + p.t + ';--r:' + p.r + 'deg;animation-delay:' + (i * .8) + 's">' + leafSVG(p.c) + '</div>';
+  }).join('');
+}
+
+/* ---------- 공통 ---------- */
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+  return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function won(n) { return Number(n || 0).toLocaleString('ko-KR'); }
+function fmtDate(t) { if (!t) return '-'; var d = new Date(t);
+  return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+function store(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
+function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+var toastTimer;
+function toast(msg, isErr) {
+  var t = $('toast'); t.textContent = msg; t.className = isErr ? 'err' : '';
+  clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.className = 'hidden'; }, 2600);
+}
+
+var pending = 0;
+function call(action, payload, silent) {
+  if (!silent) { pending++; $('loading').classList.remove('hidden'); }
+  return new Promise(function (resolve, reject) {
+    function done() { if (!silent && --pending <= 0) { pending = 0; $('loading').classList.add('hidden'); } }
+    function onRes(res) {
+      done();
+      if (res && res.ok) return resolve(res.data);
+      var msg = (res && res.error) || '오류가 발생했습니다.';
+      if (msg === 'SESSION_EXPIRED') { sessionExpired(); return reject(new Error(msg)); }
+      if (!silent) toast(msg, true);
+      reject(new Error(msg));
+    }
+    function onErr(err) { done(); if (!silent) toast('서버 연결 실패: ' + (err && err.message || err), true); reject(err); }
+    if (window.google && google.script && google.script.run) {
+      // Apps Script 웹앱 주소로 열었을 때
+      google.script.run.withSuccessHandler(onRes).withFailureHandler(onErr).api(action, state.token, payload || {});
+    } else {
+      // GitHub Pages 등 외부 주소로 열었을 때: JSON API(doPost) 호출
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // CORS preflight 회피
+        body: JSON.stringify({ action: action, token: state.token, payload: payload || {} })
+      }).then(function (r) { return r.json(); }).then(onRes, onErr);
+    }
+  });
+}
+
+function show(view) {
+  ['login', 'setpw', 'app'].forEach(function (v) { $('v-' + v).classList.toggle('hidden', v !== view); });
+}
+
+/* ---------- 로그인 ---------- */
+$('f-login').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var nick = $('l-nick').value.trim();
+  call('login', { nickname: nick, password: $('l-pw').value }).then(function (r) {
+    if (r.needSetup) { $('s-nick').textContent = r.nickname; $('s-pw').value = $('s-pw2').value = ''; show('setpw'); $('s-pw').focus(); return; }
+    onLogin(r);
+  }).catch(function () {});
+});
+
+$('f-setpw').addEventListener('submit', function (e) {
+  e.preventDefault();
+  if ($('s-pw').value !== $('s-pw2').value) return toast('비밀번호 확인이 일치하지 않습니다.', true);
+  call('setInitialPassword', { nickname: $('s-nick').textContent, password: $('s-pw').value })
+    .then(function (r) { toast('비밀번호가 설정되었습니다.'); onLogin(r); }).catch(function () {});
+});
+
+function onLogin(r) {
+  state.token = r.token; state.user = r.user; store(TOKEN_KEY, r.token);
+  $('l-pw').value = '';
+  startApp();
+}
+
+function sessionExpired() {
+  state.token = null; store(TOKEN_KEY, null); stopTimer();
+  show('login'); toast('로그인이 만료되었습니다. 다시 로그인하세요.', true);
+}
+
+function logout() {
+  call('logout', {}, true).catch(function () {});
+  state.token = null; state.user = null; store(TOKEN_KEY, null); stopTimer(); show('login');
+}
+
+/* ---------- 앱 / 탭 ---------- */
+function startApp() {
+  var isMaster = state.user.role === '길마';
+  $('me-nick').textContent = state.user.nickname;
+  renderMyJob();
+  $('m-jobs').textContent = '직업: ' + JOBS.join(', ');
+  $('me-role').textContent = state.user.role;
+  $('me-role').className = 'badge' + (isMaster ? ' master' : '');
+  var tabs = [['auction', '🐾 경매']];
+  if (isMaster) tabs.push(['manage', '📢 경매 열기'], ['items', '📦 아이템 창고'], ['members', '🐱 길드 냥이들']);
+  tabs.push(['me', '🏠 내 정보']);
+  $('tabs').innerHTML = tabs.map(function (t) {
+    return '<button data-tab="' + t[0] + '">' + t[1] + '</button>'; }).join('');
+  $('tabs').querySelectorAll('button').forEach(function (b) { b.onclick = function () { setTab(b.dataset.tab); }; });
+  show('app');
+  setTab(isMaster && load('guildAuctionTab') && tabs.some(function (t) { return t[0] === load('guildAuctionTab'); })
+    ? load('guildAuctionTab') : 'auction');
+  stopTimer();
+  state.timer = setInterval(function () {
+    if (document.hidden) return;
+    if (state.tab === 'auction' || state.tab === 'manage') loadAuctions(true);
+  }, 20000);
+}
+function stopTimer() { if (state.timer) clearInterval(state.timer); state.timer = null; }
+
+function setTab(tab) {
+  state.tab = tab; store('guildAuctionTab', tab);
+  document.querySelectorAll('.tab').forEach(function (el) { el.classList.toggle('hidden', el.id !== 't-' + tab); });
+  $('tabs').querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === tab); });
+  if (tab === 'auction') loadAuctions();
+  if (tab === 'manage') { loadItems(); loadAuctions(); }
+  if (tab === 'items') loadItems();
+  if (tab === 'members') loadMembers();
+}
+
+/* ---------- 경매 (길드원) ---------- */
+function loadAuctions(silent) {
+  return call('listAuctions', {}, silent).then(function (list) {
+    state.auctions = list; renderAuctions(); if (state.user.role === '길마') renderManage();
+  }).catch(function () {});
+}
+
+function nameChips(names, winner, jobs) {
+  if (!names.length) return '<span class="muted">없음</span>';
+  jobs = jobs || {};
+  return '<div class="chips">' + names.map(function (n) {
+    var cls = n === winner ? 'chip win' : (n === state.user.nickname ? 'chip me' : 'chip');
+    return '<span class="' + cls + '">' + (n === winner ? '🏆 ' : '') + esc(n) +
+      (jobs[n] ? ' <span style="opacity:.7">· ' + esc(jobs[n]) + '</span>' : '') + '</span>';
+  }).join('') + '</div>';
+}
+
+function renderAuctions() {
+  var active = state.auctions.filter(function (a) { return a.status === '진행중'; });
+  var closed = state.auctions.filter(function (a) { return a.status !== '진행중'; });
+  $('active-list').innerHTML = active.length ? active.map(function (a) {
+    var my = a.myEntry;
+    return '<div class="card auction">' +
+      '<div class="row" style="justify-content:space-between">' +
+        '<span class="title">' + esc(a.itemName) + '</span><span class="tag">' + won(a.price) + '</span></div>' +
+      (a.memo ? '<div class="muted">📝 ' + esc(a.memo) + '</div>' : '') +
+      '<div class="row"><span class="muted">내 선택:</span>' +
+        (my === '참여' ? '<span class="badge join">참여한다냥</span>' : my === '불참' ? '<span class="badge decline">패스</span>' : '<span class="muted">아직 안 골랐다냥</span>') +
+      '</div>' +
+      '<div class="row">' +
+        '<button class="ok grow big" ' + (my === '참여' ? 'disabled' : '') + ' onclick="setEntry(\'' + a.id + '\', true)">참여할래냥!</button>' +
+        '<button class="no grow big" ' + (my === '불참' ? 'disabled' : '') + ' onclick="setEntry(\'' + a.id + '\', false)">이번엔 패스</button>' +
+      '</div>' +
+      '<div><div class="muted" style="margin-bottom:5px">🐾 참여 냥이 ' + a.joined.length + '명</div>' + nameChips(a.joined, null, a.jobs) + '</div>' +
+      '<div class="muted">열린 시간 ' + fmtDate(a.createdAt) + '</div>' +
+    '</div>';
+  }).join('') : '<div class="card">' + emptyState('지금은 열린 경매가 없다냥… zZ', 'gray') + '</div>';
+
+  $('closed-list').innerHTML = closed.length ? '<div class="table-scroll"><table><thead><tr><th>아이템</th><th class="num">가격</th><th>낙찰자</th><th>참여</th><th>마감</th></tr></thead><tbody>' +
+    closed.map(function (a) {
+      return '<tr><td>' + esc(a.itemName) + '</td><td class="num">' + won(a.price) + '</td><td>' + (a.winner ? '🏆 ' + esc(a.winner) : '-') +
+        '</td><td>' + a.joined.length + '명</td><td class="muted">' + fmtDate(a.closedAt) + '</td></tr>';
+    }).join('') + '</tbody></table></div>' : '<div class="empty">아직 끝난 경매가 없다냥.</div>';
+}
+
+function setEntry(id, join) {
+  call('setEntry', { auctionId: id, join: join }).then(function () {
+    toast(join ? '참여 완료다냥! 🐾' : '이번엔 패스했다냥'); loadAuctions(true);
+  }).catch(function () { loadAuctions(true); });
+}
+
+/* ---------- 경매 관리 (길마) ---------- */
+function loadItems() {
+  return call('listItems').then(function (items) { state.items = sortItems(items); renderItemSelect(); renderItems(); }).catch(function () {});
+}
+
+$('a-search').addEventListener('input', renderItemSelect);
+function renderItemSelect() {
+  var q = $('a-search').value.trim().toLowerCase();
+  var sel = $('a-item'), prev = sel.value;
+  var list = state.items.filter(function (i) { return !q || (i.name + ' ' + (i.category || '')).toLowerCase().indexOf(q) >= 0; });
+  sel.innerHTML = list.length ? list.map(function (i) {
+    return '<option value="' + esc(i.id) + '">' + esc(i.name) + (i.category ? ' [' + esc(i.category) + ']' : '') + ' — ' + won(i.price) + '</option>';
+  }).join('') : '<option disabled>' + (state.items.length ? '못 찾았다냥' : '창고가 비었다냥. 아이템 창고 탭에서 먼저 넣어라냥.') + '</option>';
+  if (prev && list.some(function (i) { return i.id === prev; })) sel.value = prev;
+  else if (list.length === 1) { sel.value = list[0].id; onItemPick(); }
+}
+
+$('a-item').addEventListener('change', onItemPick);
+function onItemPick() {
+  var item = state.items.filter(function (i) { return i.id === $('a-item').value; })[0];
+  $('a-pricebox').classList.toggle('hidden', !item);
+  if (!item) return;
+  $('a-name').textContent = item.name;
+  $('a-cat').textContent = item.category ? '[' + item.category + ']' : '';
+  $('a-dbprice').textContent = won(item.price);
+  $('a-price').value = item.price;
+}
+
+function createAuction() {
+  var itemId = $('a-item').value;
+  if (!itemId) return toast('아이템을 선택하세요.', true);
+  $('a-submit').disabled = true;
+  call('createAuction', { itemId: itemId, price: $('a-price').value, memo: $('a-memo').value }).then(function () {
+    toast('경매가 활성화되었습니다.');
+    $('a-memo').value = ''; $('a-item').value = ''; $('a-price').value = ''; $('a-pricebox').classList.add('hidden');
+    loadAuctions();
+  }).catch(function () {}).then(function () { $('a-submit').disabled = false; });
+}
+
+function renderManage() {
+  var list = state.auctions;
+  $('manage-list').innerHTML = list.length ? list.map(function (a) {
+    var active = a.status === '진행중';
+    var opts = '<option value="">낙찰자 선택</option>' + a.joined.map(function (n) {
+      return '<option' + (n === a.winner ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('');
+    if (a.winner && a.joined.indexOf(a.winner) < 0) opts += '<option selected>' + esc(a.winner) + '</option>';
+    return '<div class="card auction">' +
+      '<div class="row" style="justify-content:space-between">' +
+        '<span class="row"><span class="title">' + esc(a.itemName) + '</span><span class="badge ' + (active ? 'active' : 'closed') + '">' + esc(a.status) + '</span></span>' +
+        '<span class="price">' + won(a.price) + '</span></div>' +
+      (a.memo ? '<div class="muted">' + esc(a.memo) + '</div>' : '') +
+      '<div><div class="muted" style="margin-bottom:4px">참여 ' + a.joined.length + '명</div>' + nameChips(a.joined, a.winner, a.jobs) + '</div>' +
+      (a.declined.length ? '<div><div class="muted" style="margin-bottom:4px">불참 ' + a.declined.length + '명</div>' + nameChips(a.declined, null, a.jobs) + '</div>' : '') +
+      '<div class="row">' +
+        '<select class="grow" id="w-' + a.id + '">' + opts + '</select>' +
+        '<button class="sm" onclick="setWinner(\'' + a.id + '\')">낙찰 저장</button>' +
+        (active ? '<button class="sm primary" onclick="setStatus(\'' + a.id + '\', \'마감\')">마감</button>'
+                : '<button class="sm" onclick="setStatus(\'' + a.id + '\', \'진행중\')">다시 진행</button>') +
+        '<button class="sm no" onclick="deleteAuction(\'' + a.id + '\')">삭제</button>' +
+      '</div>' +
+      '<div class="muted">등록 ' + fmtDate(a.createdAt) + ' · ' + esc(a.createdBy) + (a.closedAt ? ' · 마감 ' + fmtDate(a.closedAt) : '') + '</div>' +
+    '</div>';
+  }).join('') : '<div class="card">' + emptyState('아직 연 경매가 없다냥', 'siamese') + '</div>';
+}
+
+function setStatus(id, status) {
+  call('updateAuction', { id: id, status: status }).then(function () { toast(status === '마감' ? '마감했습니다.' : '다시 진행합니다.'); loadAuctions(); }).catch(function () {});
+}
+function setWinner(id) {
+  var w = $('w-' + id).value;
+  call('updateAuction', { id: id, winner: w }).then(function () { toast(w ? '낙찰자: ' + w : '낙찰자를 비웠습니다.'); loadAuctions(); }).catch(function () {});
+}
+function deleteAuction(id) {
+  if (!confirm('이 경매와 참여 기록을 삭제할까요?')) return;
+  call('deleteAuction', { id: id }).then(function () { toast('삭제했습니다.'); loadAuctions(); }).catch(function () {});
+}
+
+/* ---------- 아이템 DB (길마) ---------- */
+// 분류 순서: 주무기 → 보조무기 → 공용 → 그 외(가나다) → 분류 없음. 같은 분류 안에서는 아이템명 가나다순
+var CAT_ORDER = ['주무기', '보조무기', '공용'];
+function catRank(c) { var i = CAT_ORDER.indexOf(c || ''); return i >= 0 ? i : (c ? CAT_ORDER.length : CAT_ORDER.length + 1); }
+function sortItems(list) {
+  return list.slice().sort(function (a, b) {
+    return catRank(a.category) - catRank(b.category)
+      || String(a.category || '').localeCompare(String(b.category || ''), 'ko')
+      || String(a.name).localeCompare(String(b.name), 'ko');
+  });
+}
+function filteredItems() {
+  var q = $('i-filter').value.trim().toLowerCase();
+  return state.items.filter(function (i) { return !q || (i.name + ' ' + (i.category || '') + ' ' + (i.memo || '')).toLowerCase().indexOf(q) >= 0; });
+}
+
+$('i-filter').addEventListener('input', renderItems);
+function renderItems() {
+  var list = filteredItems();
+  var bulk = state.bulk;
+  $('i-count').textContent = '(' + state.items.length + ')';
+  var lastCat = null, html = '';
+  list.forEach(function (i) {
+    var cat = i.category || '분류 없음';
+    if (cat !== lastCat) {
+      html += '<tr><td colspan="5" style="background:var(--panel2);font-weight:700;color:var(--accent)">' + esc(cat) + '</td></tr>';
+      lastCat = cat;
+    }
+    var priceCell;
+    if (bulk) {
+      var v = bulk[i.id] !== undefined ? bulk[i.id] : i.price;
+      var changed = bulk[i.id] !== undefined && Number(bulk[i.id]) !== i.price;
+      priceCell = '<td class="num"><input type="number" min="0" step="1" data-bulk="' + esc(i.id) + '" value="' + esc(v) + '" style="width:110px;padding:5px 8px;text-align:right' +
+        (changed ? ';border-color:var(--accent)' : '') + '">' +
+        (changed ? '<div class="muted" style="font-size:11px">기존 ' + won(i.price) + '</div>' : '') + '</td>';
+    } else {
+      priceCell = '<td class="num price">' + won(i.price) + '</td>';
+    }
+    html += '<tr><td>' + esc(i.name) + '</td><td>' + esc(i.category) + '</td>' + priceCell + '<td class="muted">' + esc(i.memo) +
+      '</td><td class="num"><div class="row" style="justify-content:flex-end">' +
+      (bulk ? '' : '<button class="sm" onclick="editItem(\'' + i.id + '\')">수정</button>' +
+      '<button class="sm no" onclick="deleteItem(\'' + i.id + '\')">삭제</button>') + '</div></td></tr>';
+  });
+  $('i-list').innerHTML = html || '<tr><td colspan="5">' + emptyState('창고가 텅 비었다냥', 'gray') + '</td></tr>';
+  updateBulkCount();
+}
+
+/* ---------- 가격 일괄 수정 ---------- */
+$('i-list').addEventListener('input', function (e) {
+  var id = e.target.getAttribute && e.target.getAttribute('data-bulk');
+  if (!id || !state.bulk) return;
+  state.bulk[id] = e.target.value;
+  var item = state.items.filter(function (x) { return x.id === id; })[0];
+  e.target.style.borderColor = item && Number(e.target.value) !== item.price ? 'var(--accent)' : '';
+  updateBulkCount();
+});
+function bulkChanges() {
+  if (!state.bulk) return [];
+  return state.items.filter(function (i) {
+    var v = state.bulk[i.id];
+    return v !== undefined && v !== '' && Number(v) !== i.price;
+  }).map(function (i) { return { id: i.id, price: Number(state.bulk[i.id]) }; });
+}
+function updateBulkCount() { if (state.bulk) $('b-count').textContent = '변경 ' + bulkChanges().length + '건'; }
+function toggleBulk() {
+  if (state.bulk && bulkChanges().length && !confirm('저장하지 않은 변경 ' + bulkChanges().length + '건이 있습니다. 닫을까요?')) return;
+  state.bulk = state.bulk ? null : {};
+  $('b-bar').classList.toggle('hidden', !state.bulk);
+  $('b-toggle').classList.toggle('primary', !!state.bulk);
+  renderItems();
+}
+function applyPct() {
+  var pct = Number($('b-pct').value);
+  if (isNaN(pct) || pct < 0) return toast('비율을 숫자로 입력하세요.', true);
+  var list = filteredItems();
+  list.forEach(function (i) { state.bulk[i.id] = String(Math.round(i.price * pct / 100)); });
+  renderItems();
+  toast(list.length + '개 항목에 ' + pct + '% 적용 (저장 전)');
+}
+function resetBulk() { state.bulk = {}; renderItems(); }
+function saveBulk() {
+  var changes = bulkChanges();
+  if (!changes.length) return toast('변경된 가격이 없습니다.', true);
+  if (changes.some(function (c) { return isNaN(c.price) || c.price < 0; })) return toast('가격이 올바르지 않은 항목이 있습니다.', true);
+  if (!confirm(changes.length + '개 아이템 가격을 저장할까요?')) return;
+  $('b-save').disabled = true;
+  call('savePrices', { changes: changes }).then(function (n) {
+    toast(n + '개 가격을 저장했습니다.');
+    state.bulk = {};
+    return loadItems();
+  }).catch(function () {}).then(function () { $('b-save').disabled = false; });
+}
+
+function saveItem() {
+  call('saveItem', { id: $('i-id').value, name: $('i-name').value, price: $('i-price').value, category: $('i-cat').value, memo: $('i-memo').value })
+    .then(function () { toast('저장했습니다.'); resetItemForm(); loadItems(); $('i-name').focus(); }).catch(function () {});
+}
+function editItem(id) {
+  var i = state.items.filter(function (x) { return x.id === id; })[0]; if (!i) return;
+  $('i-id').value = i.id; $('i-name').value = i.name; $('i-price').value = i.price; $('i-cat').value = i.category || ''; $('i-memo').value = i.memo || '';
+  $('i-title').textContent = '아이템 수정'; $('i-cancel').classList.remove('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function resetItemForm() {
+  ['i-id', 'i-name', 'i-price', 'i-cat', 'i-memo'].forEach(function (k) { $(k).value = ''; });
+  $('i-title').textContent = '아이템 등록'; $('i-cancel').classList.add('hidden');
+}
+function deleteItem(id) {
+  if (!confirm('이 아이템을 DB에서 삭제할까요? (이미 등록된 경매에는 영향 없음)')) return;
+  call('deleteItem', { id: id }).then(function () { toast('삭제했습니다.'); loadItems(); }).catch(function () {});
+}
+
+/* ---------- 길드원 (길마) ---------- */
+function loadMembers() {
+  return call('listMembers').then(function (list) { state.members = list; renderMembers(); }).catch(function () {});
+}
+function renderMembers() {
+  $('m-count').textContent = '(' + state.members.length + ')';
+  $('m-list').innerHTML = state.members.map(function (m, idx) {
+    var isMe = m.nickname === state.user.nickname;
+    var isM = m.role === '길마';
+    return '<tr><td>' + esc(m.nickname) + (isMe ? ' <span class="muted">(나)</span>' : '') + '</td>' +
+      '<td><select style="min-width:120px;padding:5px 8px" onchange="setMemberJob(' + idx + ', this.value)">' + jobOptions(m.job, '미설정') + '</select></td>' +
+      '<td><span class="badge' + (isM ? ' master' : '') + '">' + esc(m.role) + '</span></td>' +
+      '<td>' + (m.hasPassword ? '설정됨' : '<span class="muted">미설정</span>') + '</td>' +
+      '<td class="muted">' + fmtDate(m.lastLogin) + '</td>' +
+      '<td class="num"><div class="row" style="justify-content:flex-end">' +
+        (isMe ? '' :
+          '<button class="sm" onclick="memberAct(' + idx + ',\'role\')">' + (isM ? '길드원으로' : '길마로') + '</button>' +
+          '<button class="sm" onclick="memberAct(' + idx + ',\'reset\')">비번 초기화</button>' +
+          '<button class="sm no" onclick="memberAct(' + idx + ',\'delete\')">삭제</button>') +
+      '</div></td></tr>';
+  }).join('');
+}
+function memberAct(idx, kind) {
+  var m = state.members[idx]; if (!m) return;
+  var p;
+  if (kind === 'reset') {
+    if (!confirm(m.nickname + ' 님의 비밀번호를 초기화할까요? 다음 로그인 때 새 비밀번호를 정하게 됩니다.')) return;
+    p = call('resetPassword', { nickname: m.nickname });
+  } else if (kind === 'role') {
+    var role = m.role === '길마' ? '길드원' : '길마';
+    if (!confirm(m.nickname + ' 님을 ' + role + '(으)로 변경할까요?')) return;
+    p = call('setRole', { nickname: m.nickname, role: role });
+  } else {
+    if (!confirm(m.nickname + ' 님을 삭제할까요?')) return;
+    p = call('deleteMember', { nickname: m.nickname });
+  }
+  p.then(function () { toast('처리했습니다.'); loadMembers(); }).catch(function () {});
+}
+function addMembers() {
+  call('addMembers', { nicknames: $('m-names').value }).then(function (r) {
+    $('m-names').value = '';
+    toast(r.added.length + '명 등록' + (r.skipped.length ? ', 중복 ' + r.skipped.length + '명 건너뜀' : ''));
+    loadMembers();
+  }).catch(function () {});
+}
+
+function setMemberJob(idx, job) {
+  var m = state.members[idx]; if (!m) return;
+  call('setJob', { nickname: m.nickname, job: job }).then(function () {
+    m.job = job; toast(m.nickname + ' 님 직업: ' + (job || '미설정'));
+    if (m.nickname === state.user.nickname) { state.user.job = job; renderMyJob(); }
+  }).catch(function () { loadMembers(); });
+}
+
+/* ---------- 내 정보 ---------- */
+function renderMyJob() {
+  var job = state.user.job || '';
+  $('me-job').textContent = job ? job : '';
+  $('p-job').innerHTML = jobOptions(job);
+  $('job-notice').classList.toggle('hidden', !!job);
+}
+function saveMyJob() {
+  var job = $('p-job').value;
+  if (!job) return toast('직업을 선택하세요.', true);
+  call('setMyJob', { job: job }).then(function () {
+    state.user.job = job; renderMyJob(); toast('직업을 ' + job + '(으)로 저장했습니다.');
+  }).catch(function () {});
+}
+function changePassword() {
+  if ($('p-new').value !== $('p-new2').value) return toast('새 비밀번호 확인이 일치하지 않습니다.', true);
+  call('changePassword', { oldPassword: $('p-old').value, newPassword: $('p-new').value }).then(function () {
+    toast('비밀번호를 변경했습니다.'); ['p-old', 'p-new', 'p-new2'].forEach(function (k) { $(k).value = ''; });
+  }).catch(function () {});
+}
+
+/* ---------- 시작 ---------- */
+/* DEMO MOCK (preview only) */
+(function () {
+  var now = Date.now();
+  var items = [
+    { id: 'I1', name: '5T 나이트 주무기', price: 3500, category: '주무기', memo: '' },
+    { id: 'I2', name: '5T 레인저 주무기', price: 15000, category: '주무기', memo: '' },
+    { id: 'I3', name: '5T 오라클 보조무기', price: 5800, category: '보조무기', memo: '' },
+    { id: 'I4', name: '5T 귀걸이', price: 15000, category: '공용', memo: '인기템' },
+    { id: 'I5', name: '5T 투구', price: 10000, category: '공용', memo: '' }
+  ];
+  var auctions = [
+    { id: 'A1', itemName: '5T 귀걸이', price: 15000, status: '진행중', memo: '1넴 드랍', createdBy: '저니니', createdAt: now - 600000, joined: ['저니니', '치즈냥', '까망이'], declined: ['삼색이'], myEntry: '참여', jobs: { '저니니': '레인저', '치즈냥': '나이트', '까망이': '어쌔신', '삼색이': '오라클' }, winner: '' },
+    { id: 'A2', itemName: '5T 레인저 주무기', price: 15000, status: '진행중', memo: '', createdBy: '저니니', createdAt: now - 300000, joined: ['치즈냥'], declined: [], myEntry: '', jobs: { '치즈냥': '나이트' }, winner: '' },
+    { id: 'A3', itemName: '5T 투구', price: 10000, status: '마감', memo: '', createdBy: '저니니', createdAt: now - 86400000, closedAt: now - 80000000, joined: ['까망이', '삼색이'], declined: [], myEntry: '', jobs: {}, winner: '까망이' }
+  ];
+  var members = [
+    { nickname: '저니니', role: '길마', job: '레인저', hasPassword: true, lastLogin: now },
+    { nickname: '치즈냥', role: '길드원', job: '나이트', hasPassword: true, lastLogin: now - 3600000 },
+    { nickname: '까망이', role: '길드원', job: '어쌔신', hasPassword: false, lastLogin: null }
+  ];
+  var data = {
+    login: { token: 'demo', user: { nickname: '저니니', role: '길마', job: '레인저' } },
+    me: { nickname: '저니니', role: '길마', job: '레인저' },
+    listAuctions: auctions, listItems: items, listMembers: members
+  };
+  window.call = function (action) {
+    return new Promise(function (res) { setTimeout(function () { res(data[action] !== undefined ? data[action] : true); }, 150); });
+  };
+})();
+
+drawArt(); drawDecor();
+(function init() {
+  var t = load(TOKEN_KEY);
+  if (!t) return show('login');
+  state.token = t;
+  call('me', {}, true).then(function (user) { state.user = user; startApp(); })
+    .catch(function () { state.token = null; store(TOKEN_KEY, null); show('login'); });
+})();
+</script>
+</body>
+</html>
