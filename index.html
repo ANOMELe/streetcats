@@ -305,7 +305,8 @@
           <div class="grow"><label>가격</label><input id="i-price" type="number" min="0" step="1"></div>
         </div>
         <div class="row">
-          <div class="grow"><label>분류 (선택)</label><input id="i-cat" placeholder="예: 주무기, 보조무기, 공용"></div>
+          <div class="grow"><label>입찰 가능 직업</label><select id="i-job"></select></div>
+          <div class="grow"><label>분류 (선택)</label><input id="i-cat" placeholder="예: 주무기, 보조무기, 스킬"></div>
           <div class="grow"><label>메모 (선택)</label><input id="i-memo"></div>
         </div>
         <div class="row" style="margin-top:16px">
@@ -336,7 +337,7 @@
           </div>
         </div>
         <div class="table-scroll"><table>
-          <thead><tr><th>아이템명</th><th>분류</th><th class="num">가격</th><th>메모</th><th></th></tr></thead>
+          <thead><tr><th>아이템명</th><th>직업</th><th>분류</th><th class="num">가격</th><th>메모</th><th></th></tr></thead>
           <tbody id="i-list"></tbody>
         </table></div>
       </div>
@@ -721,7 +722,7 @@ function renderItemSelect() {
   var sel = $('a-item'), prev = sel.value;
   var list = state.items.filter(function (i) { return !q || (i.name + ' ' + (i.category || '')).toLowerCase().indexOf(q) >= 0; });
   sel.innerHTML = list.length ? list.map(function (i) {
-    return '<option value="' + esc(i.id) + '">' + esc(i.name) + (i.category ? ' [' + esc(i.category) + ']' : '') + ' — ' + won(i.price) + '</option>';
+    return '<option value="' + esc(i.id) + '">' + esc(i.name) + ' [' + esc(i.job || '공용') + ']' + ' — ' + won(i.price) + '</option>';
   }).join('') : '<option disabled>' + (state.items.length ? '못 찾았다냥' : '창고가 비었다냥. 아이템 창고 탭에서 먼저 넣어라냥.') + '</option>';
   if (prev && list.some(function (i) { return i.id === prev; })) sel.value = prev;
   else if (list.length === 1) { sel.value = list[0].id; onItemPick(); }
@@ -807,7 +808,7 @@ function sortItems(list) {
 }
 function filteredItems() {
   var q = $('i-filter').value.trim().toLowerCase();
-  return state.items.filter(function (i) { return !q || (i.name + ' ' + (i.category || '') + ' ' + (i.memo || '')).toLowerCase().indexOf(q) >= 0; });
+  return state.items.filter(function (i) { return !q || (i.name + ' ' + (i.job || '공용') + ' ' + (i.category || '') + ' ' + (i.memo || '')).toLowerCase().indexOf(q) >= 0; });
 }
 
 $('i-filter').addEventListener('input', renderItems);
@@ -819,7 +820,7 @@ function renderItems() {
   list.forEach(function (i) {
     var cat = i.category || '분류 없음';
     if (cat !== lastCat) {
-      html += '<tr><td colspan="5" style="background:var(--panel2);font-weight:700;color:var(--accent)">' + esc(cat) + '</td></tr>';
+      html += '<tr><td colspan="6" style="background:var(--panel2);font-weight:700;color:var(--accent)">' + esc(cat) + '</td></tr>';
       lastCat = cat;
     }
     var priceCell;
@@ -832,12 +833,13 @@ function renderItems() {
     } else {
       priceCell = '<td class="num price">' + won(i.price) + '</td>';
     }
-    html += '<tr><td>' + esc(i.name) + '</td><td>' + esc(i.category) + '</td>' + priceCell + '<td class="muted">' + esc(i.memo) +
+    html += '<tr><td>' + esc(i.name) + '</td><td>' + (i.job ? '<span class="badge jobtag">' + esc(i.job) + '</span>' : '<span class="muted">공용</span>') +
+      '</td><td>' + esc(i.category) + '</td>' + priceCell + '<td class="muted">' + esc(i.memo) +
       '</td><td class="num"><div class="row" style="justify-content:flex-end">' +
       (bulk ? '' : '<button class="sm" onclick="editItem(\'' + i.id + '\')">수정</button>' +
       '<button class="sm no" onclick="deleteItem(\'' + i.id + '\')">삭제</button>') + '</div></td></tr>';
   });
-  $('i-list').innerHTML = html || '<tr><td colspan="5">' + emptyState('창고가 텅 비었다냥', 'gray') + '</td></tr>';
+  $('i-list').innerHTML = html || '<tr><td colspan="6">' + emptyState('창고가 텅 비었다냥', 'gray') + '</td></tr>';
   updateBulkCount();
 }
 
@@ -888,17 +890,18 @@ function saveBulk() {
 }
 
 function saveItem() {
-  call('saveItem', { id: $('i-id').value, name: $('i-name').value, price: $('i-price').value, category: $('i-cat').value, memo: $('i-memo').value })
+  call('saveItem', { id: $('i-id').value, name: $('i-name').value, price: $('i-price').value, category: $('i-cat').value, memo: $('i-memo').value, job: $('i-job').value })
     .then(function () { toast('저장했습니다.'); resetItemForm(); loadItems(); $('i-name').focus(); }).catch(function () {});
 }
 function editItem(id) {
   var i = state.items.filter(function (x) { return x.id === id; })[0]; if (!i) return;
-  $('i-id').value = i.id; $('i-name').value = i.name; $('i-price').value = i.price; $('i-cat').value = i.category || ''; $('i-memo').value = i.memo || '';
+  $('i-id').value = i.id; $('i-name').value = i.name; $('i-price').value = i.price; $('i-cat').value = i.category || ''; $('i-memo').value = i.memo || ''; $('i-job').value = i.job || '공용';
   $('i-title').textContent = '아이템 수정'; $('i-cancel').classList.remove('hidden');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 function resetItemForm() {
   ['i-id', 'i-name', 'i-price', 'i-cat', 'i-memo'].forEach(function (k) { $(k).value = ''; });
+  $('i-job').value = '공용';
   $('i-title').textContent = '아이템 등록'; $('i-cancel').classList.add('hidden');
 }
 function deleteItem(id) {
@@ -1007,6 +1010,12 @@ function changePassword() {
 }
 
 /* ---------- 시작 ---------- */
+$('i-job').innerHTML = '<option value="공용">공용 (누구나)</option>' + JOBS.map(function (j) { return '<option>' + j + '</option>'; }).join('');
+$('i-name').addEventListener('input', function () {
+  if ($('i-id').value) return; // 수정 중엔 자동 변경 안 함
+  var n = $('i-name').value, hit = JOBS.filter(function (j) { return n.indexOf(j) >= 0; })[0];
+  $('i-job').value = hit || '공용';
+});
 drawArt(); drawDecor();
 (function init() {
   var t = load(TOKEN_KEY);
