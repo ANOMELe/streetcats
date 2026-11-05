@@ -110,6 +110,9 @@
   .badge { display: inline-block; padding: 2px 9px; border-radius: 99px; font: 13px var(--hand);
     background: #fff; border: 2px solid var(--ink); }
   .badge.master { background: var(--accent); }
+  .badge.sub { background: var(--sky); }
+  .badge.knight { background: #b890dc; color: #fff; }
+  .badge.jobtag { background: #fff3c4; }
   .badge.active { background: var(--ok); color: #fff; }
   .badge.closed { background: #eee3d0; color: var(--muted); }
   .badge.join { background: var(--ok); color: #fff; }
@@ -127,6 +130,22 @@
     padding: 2px 12px; font: 20px var(--hand); color: var(--ink); }
   .tag::before { content: ""; width: 14px; height: 14px; border-radius: 50%; background: #f7c948; border: 2px solid var(--ink); }
   .auction .ribbon { position: absolute; top: -14px; right: 18px; }
+
+  /* ---------- 1순위 / 팝업 ---------- */
+  .topbox { display: flex; width: 100%; align-items: center; gap: 10px; text-align: left; background: #fff3dc;
+    border: 2.5px solid var(--ink); border-radius: 16px; padding: 10px 14px; box-shadow: 0 3px 0 var(--ink); font: inherit; color: var(--ink); white-space: normal; }
+  .topbox .crown { font-size: 26px; line-height: 1; }
+  .topbox .who { font: 20px var(--hand); }
+  .topbox .pw { color: #d7701c; font-family: var(--hand); }
+  .topbox .more { margin-left: auto; font: 14px var(--hand); color: var(--muted); white-space: nowrap; }
+  .topbox.none { background: #fffdf8; box-shadow: none; border-style: dashed; cursor: default; }
+  .lock { background: #f3ece0; border: 2.5px dashed var(--muted); border-radius: 14px; padding: 10px 14px; color: var(--muted); font-weight: 800; }
+  #modal { position: fixed; inset: 0; z-index: 90; background: rgba(59,42,32,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  #modal .card { width: 100%; max-width: 460px; max-height: 85vh; overflow: auto; margin: 0; }
+  #modal .close { position: absolute; top: 10px; right: 10px; }
+  tr.off td { opacity: .45; }
+  tr.me td { background: #fff3dc; }
+  .rank { font: 18px var(--hand); width: 34px; }
 
   /* ---------- 표 ---------- */
   table { width: 100%; border-collapse: separate; border-spacing: 0; }
@@ -175,6 +194,7 @@
 <body>
 <div id="loading" class="hidden"></div>
 <div id="toast" class="hidden"></div>
+<div id="modal" class="hidden" onclick="if (event.target === this) closeModal()"><div class="card"><button class="sm close" onclick="closeModal()">닫기</button><div id="modal-body"></div></div></div>
 <div id="decor"></div>
 
 <div class="wrap">
@@ -227,14 +247,14 @@
     <div id="t-auction" class="tab">
       <div class="hero">
         <div class="cat" data-cat="black" data-face="open"></div>
-        <div><h2>경매에 참여할거냥?</h2><p>열려 있는 아이템마다 참여할지 패스할지 골라줘냥.</p></div>
+        <div><h2>경매에 참여할거냥?</h2><p>입찰한 냥이 중 <b>전투력이 가장 높은 냥이</b>가 가져간다냥. 직업 장비는 같은 직업만 입찰 가능!</p></div>
         <div class="spacer"></div>
         <button class="sm" onclick="loadAuctions()">새로고침</button>
       </div>
       <div id="job-notice" class="card hidden" style="background:#fff3dc">
         <div class="row" style="justify-content:space-between">
-          <span class="hand" style="font-size:18px">아직 직업을 안 정했다냥!</span>
-          <button class="sm primary" onclick="setTab('me')">직업 정하러 가기</button>
+          <span class="hand" style="font-size:18px" id="job-notice-text">아직 직업을 안 정했다냥!</span>
+          <button class="sm primary" onclick="setTab('me')">내 정보로 가기</button>
         </div>
       </div>
       <div id="active-list"></div>
@@ -329,15 +349,15 @@
       </div>
       <div class="card">
         <h2>새 냥이 등록</h2>
-        <p class="muted">한 줄에 한 명씩 <b>닉네임 직업</b>으로 적어라냥 (직업은 생략 가능). 시트에서 두 열을 복사해 붙여넣어도 된다냥. 등록된 냥이는 처음 로그인할 때 비밀번호를 직접 정한다냥.</p>
+        <p class="muted">한 줄에 한 명씩 <b>닉네임 직업 전투력</b>으로 적어라냥 (직업·전투력은 생략 가능). 시트에서 열을 복사해 붙여넣어도 된다냥. 등록된 냥이는 처음 로그인할 때 비밀번호를 직접 정한다냥.</p>
         <p class="muted" id="m-jobs"></p>
-        <textarea id="m-names" placeholder="닉네임1 나이트&#10;닉네임2 오라클&#10;닉네임3"></textarea>
+        <textarea id="m-names" placeholder="닉네임1 나이트 52000&#10;닉네임2 오라클&#10;닉네임3"></textarea>
         <button class="primary full" onclick="addMembers()">등록하기냥</button>
       </div>
       <div class="card">
         <h2>길드원 목록 <span class="muted" id="m-count"></span></h2>
         <div class="table-scroll"><table>
-          <thead><tr><th>닉네임</th><th>직업</th><th>권한</th><th>비밀번호</th><th>최근 로그인</th><th></th></tr></thead>
+          <thead><tr><th>닉네임</th><th>직업</th><th class="num">전투력</th><th>권한</th><th>비밀번호</th><th>최근 로그인</th><th></th></tr></thead>
           <tbody id="m-list"></tbody>
         </table></div>
       </div>
@@ -347,7 +367,7 @@
     <div id="t-me" class="tab hidden">
       <div class="hero">
         <div class="cat" data-cat="orange" data-face="wink"></div>
-        <div><h2>내 정보다냥</h2><p>직업이랑 비밀번호를 바꿀 수 있다냥.</p></div>
+        <div><h2>내 정보다냥</h2><p>직업·전투력·비밀번호를 바꿀 수 있다냥. 전투력이 경매 순위를 정한다냥!</p></div>
       </div>
       <div class="row" style="align-items:flex-start;gap:20px">
         <div class="card grow" style="max-width:440px">
@@ -356,6 +376,12 @@
             <select id="p-job" class="grow"></select>
             <button class="primary" onclick="saveMyJob()">저장</button>
           </div>
+          <h2 style="margin-top:18px">내 전투력</h2>
+          <div class="row">
+            <input id="p-power" class="grow" type="text" inputmode="numeric" placeholder="예: 52,000">
+            <button class="primary" onclick="saveMyPower()">갱신</button>
+          </div>
+          <p class="muted" style="margin:6px 0 0">전투력이 오르면 바로바로 갱신하라냥.</p>
         </div>
         <div class="card grow" style="max-width:440px">
           <h2>비밀번호 바꾸기</h2>
@@ -469,6 +495,14 @@ function drawDecor() {
   }).join('');
 }
 
+/* ---------- 권한 ---------- */
+// 길마: 전부 / 부길마: 권한 변경 빼고 길마와 같음 / 기사단장: 길드원과 같음(표시만 다름)
+var ROLES = ['길마', '부길마', '기사단장', '길드원'];
+function isAdmin(role) { return role === '길마' || role === '부길마'; }
+function roleClass(role) { return { '길마': ' master', '부길마': ' sub', '기사단장': ' knight' }[role] || ''; }
+function roleBadge(role) { return '<span class="badge' + roleClass(role) + '">' + esc(role || '길드원') + '</span>'; }
+function fmtPower(n) { return n ? Number(n).toLocaleString('ko-KR') : '-'; }
+
 /* ---------- 공통 ---------- */
 function $(id) { return document.getElementById(id); }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -552,12 +586,12 @@ function logout() {
 
 /* ---------- 앱 / 탭 ---------- */
 function startApp() {
-  var isMaster = state.user.role === '길마';
+  var isMaster = isAdmin(state.user.role);
   $('me-nick').textContent = state.user.nickname;
   renderMyJob();
   $('m-jobs').textContent = '직업: ' + JOBS.join(', ');
   $('me-role').textContent = state.user.role;
-  $('me-role').className = 'badge' + (isMaster ? ' master' : '');
+  $('me-role').className = 'badge' + roleClass(state.user.role);
   var tabs = [['auction', '🐾 경매']];
   if (isMaster) tabs.push(['manage', '📢 경매 열기'], ['items', '📦 아이템 창고'], ['members', '🐱 길드 냥이들']);
   tabs.push(['me', '🏠 내 정보']);
@@ -588,7 +622,7 @@ function setTab(tab) {
 /* ---------- 경매 (길드원) ---------- */
 function loadAuctions(silent) {
   return call('listAuctions', {}, silent).then(function (list) {
-    state.auctions = list; renderAuctions(); if (state.user.role === '길마') renderManage();
+    state.auctions = list; renderAuctions(); if (isAdmin(state.user.role)) renderManage();
   }).catch(function () {});
 }
 
@@ -602,6 +636,41 @@ function nameChips(names, winner, jobs) {
   }).join('') + '</div>';
 }
 
+function topBox(a) {
+  var n = a.bidders.length;
+  if (!a.top) {
+    return '<div class="topbox none"><span class="crown">🐾</span><span>' +
+      (n ? '직업이 맞는 입찰자가 없다냥 (입찰 ' + n + '명)' : '아직 입찰한 냥이가 없다냥') + '</span>' +
+      (n ? '<button class="sm" style="margin-left:auto" onclick="showBidders(\'' + a.id + '\')">목록</button>' : '') + '</div>';
+  }
+  var me = a.top.nickname === state.user.nickname;
+  return '<button class="topbox" onclick="showBidders(\'' + a.id + '\')">' +
+    '<span class="crown">👑</span><span><span class="muted">현재 1순위' + (me ? ' (나다냥!)' : '') + '</span><br>' +
+    '<span class="who">' + esc(a.top.nickname) + '</span> · 전투력 <span class="pw">' + fmtPower(a.top.power) + '</span></span>' +
+    '<span class="more">입찰 ' + n + '명 보기 ›</span></button>';
+}
+
+function showBidders(id) {
+  var a = state.auctions.filter(function (x) { return x.id === id; })[0]; if (!a) return;
+  var rank = 0;
+  var rows = a.bidders.map(function (b) {
+    if (b.eligible) rank++;
+    var cls = (b.eligible ? '' : 'off') + (b.nickname === state.user.nickname ? ' me' : '');
+    return '<tr class="' + cls + '"><td class="rank">' + (b.eligible ? (rank === 1 ? '👑' : rank) : '–') + '</td>' +
+      '<td><b>' + esc(b.nickname) + '</b>' + (b.nickname === a.winner ? ' 🏆' : '') +
+      '<div class="muted">' + esc(b.job || '직업 미설정') + (b.eligible ? '' : ' · 직업 불일치') + '</div></td>' +
+      '<td class="num price">' + fmtPower(b.power) + '</td></tr>';
+  }).join('');
+  $('modal-body').innerHTML = '<h2 style="margin-right:60px">' + esc(a.itemName) + '</h2>' +
+    '<p class="muted" style="margin-top:-6px">' + (a.itemJob ? '<span class="badge jobtag">' + esc(a.itemJob) + ' 전용</span> ' : '') +
+    '전투력 높은 순 · 입찰 ' + a.bidders.length + '명</p>' +
+    (rows ? '<table><thead><tr><th>순위</th><th>닉네임</th><th class="num">전투력</th></tr></thead><tbody>' + rows + '</tbody></table>'
+          : emptyState('아직 입찰한 냥이가 없다냥', 'gray'));
+  $('modal').classList.remove('hidden');
+}
+function closeModal() { $('modal').classList.add('hidden'); }
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+
 function renderAuctions() {
   var active = state.auctions.filter(function (a) { return a.status === '진행중'; });
   var closed = state.auctions.filter(function (a) { return a.status !== '진행중'; });
@@ -610,15 +679,19 @@ function renderAuctions() {
     return '<div class="card auction">' +
       '<div class="row" style="justify-content:space-between">' +
         '<span class="title">' + esc(a.itemName) + '</span><span class="tag">' + won(a.price) + '</span></div>' +
-      (a.memo ? '<div class="muted">📝 ' + esc(a.memo) + '</div>' : '') +
+      (a.itemJob || a.memo ? '<div class="row">' + (a.itemJob ? '<span class="badge jobtag">🎯 ' + esc(a.itemJob) + ' 전용</span>' : '') +
+        (a.memo ? '<span class="muted">📝 ' + esc(a.memo) + '</span>' : '') + '</div>' : '') +
+      topBox(a) +
       '<div class="row"><span class="muted">내 선택:</span>' +
         (my === '참여' ? '<span class="badge join">참여한다냥</span>' : my === '불참' ? '<span class="badge decline">패스</span>' : '<span class="muted">아직 안 골랐다냥</span>') +
       '</div>' +
-      '<div class="row">' +
-        '<button class="ok grow big" ' + (my === '참여' ? 'disabled' : '') + ' onclick="setEntry(\'' + a.id + '\', true)">참여할래냥!</button>' +
-        '<button class="no grow big" ' + (my === '불참' ? 'disabled' : '') + ' onclick="setEntry(\'' + a.id + '\', false)">이번엔 패스</button>' +
-      '</div>' +
-      '<div><div class="muted" style="margin-bottom:5px">🐾 참여 냥이 ' + a.joined.length + '명</div>' + nameChips(a.joined, null, a.jobs) + '</div>' +
+      (a.canBid
+        ? '<div class="row">' +
+          '<button class="ok grow big" ' + (my === '참여' ? 'disabled' : '') + ' onclick="setEntry(\'' + a.id + '\', true)">참여할래냥!</button>' +
+          '<button class="no grow big" ' + (my === '불참' ? 'disabled' : '') + ' onclick="setEntry(\'' + a.id + '\', false)">이번엔 패스</button>' +
+          '</div>'
+        : '<div class="lock">🔒 ' + esc(a.itemJob) + ' 전용 장비라 입찰할 수 없다냥' + (state.user.job ? ' (내 직업: ' + esc(state.user.job) + ')' : ' — 내 정보에서 직업부터 정해라냥') + '</div>' +
+          (my === '참여' ? '<button class="no" onclick="setEntry(\'' + a.id + '\', false)">입찰 취소</button>' : '')) +
       '<div class="muted">열린 시간 ' + fmtDate(a.createdAt) + '</div>' +
     '</div>';
   }).join('') : '<div class="card">' + emptyState('지금은 열린 경매가 없다냥… zZ', 'gray') + '</div>';
@@ -679,15 +752,20 @@ function renderManage() {
   var list = state.auctions;
   $('manage-list').innerHTML = list.length ? list.map(function (a) {
     var active = a.status === '진행중';
-    var opts = '<option value="">낙찰자 선택</option>' + a.joined.map(function (n) {
-      return '<option' + (n === a.winner ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('');
+    // 낙찰자가 없으면 전투력 1순위를 기본 선택
+    var pick = a.winner || (a.top ? a.top.nickname : '');
+    var opts = '<option value="">낙찰자 선택</option>' + a.bidders.map(function (b) {
+      return '<option value="' + esc(b.nickname) + '"' + (b.nickname === pick ? ' selected' : '') + '>' + esc(b.nickname) +
+        ' (' + fmtPower(b.power) + (b.eligible ? '' : ', 직업 불일치') + ')</option>'; }).join('');
     if (a.winner && a.joined.indexOf(a.winner) < 0) opts += '<option selected>' + esc(a.winner) + '</option>';
     return '<div class="card auction">' +
       '<div class="row" style="justify-content:space-between">' +
         '<span class="row"><span class="title">' + esc(a.itemName) + '</span><span class="badge ' + (active ? 'active' : 'closed') + '">' + esc(a.status) + '</span></span>' +
         '<span class="price">' + won(a.price) + '</span></div>' +
       (a.memo ? '<div class="muted">' + esc(a.memo) + '</div>' : '') +
-      '<div><div class="muted" style="margin-bottom:4px">참여 ' + a.joined.length + '명</div>' + nameChips(a.joined, a.winner, a.jobs) + '</div>' +
+      (a.itemJob ? '<div><span class="badge jobtag">🎯 ' + esc(a.itemJob) + ' 전용</span></div>' : '') +
+      (a.winner ? '<div class="hand" style="font-size:18px">🏆 낙찰: ' + esc(a.winner) + '</div>' : '') +
+      topBox(a) +
       (a.declined.length ? '<div><div class="muted" style="margin-bottom:4px">불참 ' + a.declined.length + '명</div>' + nameChips(a.declined, null, a.jobs) + '</div>' : '') +
       '<div class="row">' +
         '<select class="grow" id="w-' + a.id + '">' + opts + '</select>' +
@@ -702,7 +780,9 @@ function renderManage() {
 }
 
 function setStatus(id, status) {
-  call('updateAuction', { id: id, status: status }).then(function () { toast(status === '마감' ? '마감했습니다.' : '다시 진행합니다.'); loadAuctions(); }).catch(function () {});
+  var a = state.auctions.filter(function (x) { return x.id === id; })[0];
+  if (status === '마감' && a && !a.winner && a.top && !confirm('마감하면 전투력 1순위 ' + a.top.nickname + ' 님이 자동 낙찰된다냥. 마감할까?')) return;
+  call('updateAuction', { id: id, status: status }).then(function () { toast(status === '마감' ? '마감했다냥!' : '다시 진행한다냥'); loadAuctions(); }).catch(function () {});
 }
 function setWinner(id) {
   var w = $('w-' + id).value;
@@ -833,15 +913,20 @@ function renderMembers() {
   $('m-count').textContent = '(' + state.members.length + ')';
   $('m-list').innerHTML = state.members.map(function (m, idx) {
     var isMe = m.nickname === state.user.nickname;
-    var isM = m.role === '길마';
+    var iAmMaster = state.user.role === '길마';
+    var canManage = !isMe && (iAmMaster || m.role !== '길마'); // 부길마는 길마 계정을 못 건드림
+    var roleCell = iAmMaster && !isMe
+      ? '<select style="min-width:105px;padding:5px 8px" onchange="setMemberRole(' + idx + ', this)">' + ROLES.map(function (r) {
+          return '<option' + (r === m.role ? ' selected' : '') + '>' + r + '</option>'; }).join('') + '</select>'
+      : roleBadge(m.role);
     return '<tr><td>' + esc(m.nickname) + (isMe ? ' <span class="muted">(나)</span>' : '') + '</td>' +
       '<td><select style="min-width:120px;padding:5px 8px" onchange="setMemberJob(' + idx + ', this.value)">' + jobOptions(m.job, '미설정') + '</select></td>' +
-      '<td><span class="badge' + (isM ? ' master' : '') + '">' + esc(m.role) + '</span></td>' +
+      '<td class="num"><input type="text" inputmode="numeric" value="' + (m.power || '') + '" placeholder="-" style="width:100px;padding:5px 8px;text-align:right" onchange="setMemberPower(' + idx + ', this)"></td>' +
+      '<td>' + roleCell + '</td>' +
       '<td>' + (m.hasPassword ? '설정됨' : '<span class="muted">미설정</span>') + '</td>' +
       '<td class="muted">' + fmtDate(m.lastLogin) + '</td>' +
       '<td class="num"><div class="row" style="justify-content:flex-end">' +
-        (isMe ? '' :
-          '<button class="sm" onclick="memberAct(' + idx + ',\'role\')">' + (isM ? '길드원으로' : '길마로') + '</button>' +
+        (!canManage ? '' :
           '<button class="sm" onclick="memberAct(' + idx + ',\'reset\')">비번 초기화</button>' +
           '<button class="sm no" onclick="memberAct(' + idx + ',\'delete\')">삭제</button>') +
       '</div></td></tr>';
@@ -853,10 +938,6 @@ function memberAct(idx, kind) {
   if (kind === 'reset') {
     if (!confirm(m.nickname + ' 님의 비밀번호를 초기화할까요? 다음 로그인 때 새 비밀번호를 정하게 됩니다.')) return;
     p = call('resetPassword', { nickname: m.nickname });
-  } else if (kind === 'role') {
-    var role = m.role === '길마' ? '길드원' : '길마';
-    if (!confirm(m.nickname + ' 님을 ' + role + '(으)로 변경할까요?')) return;
-    p = call('setRole', { nickname: m.nickname, role: role });
   } else {
     if (!confirm(m.nickname + ' 님을 삭제할까요?')) return;
     p = call('deleteMember', { nickname: m.nickname });
@@ -871,6 +952,21 @@ function addMembers() {
   }).catch(function () {});
 }
 
+function setMemberRole(idx, sel) {
+  var m = state.members[idx]; if (!m) return;
+  var role = sel.value;
+  if (!confirm(m.nickname + ' 님 권한을 ' + role + '(으)로 바꿀까요?')) { sel.value = m.role; return; }
+  call('setRole', { nickname: m.nickname, role: role }).then(function () { m.role = role; toast(m.nickname + ' 님은 이제 ' + role + '다냥'); renderMembers(); })
+    .catch(function () { sel.value = m.role; });
+}
+function setMemberPower(idx, input) {
+  var m = state.members[idx]; if (!m) return;
+  call('setPower', { nickname: m.nickname, power: input.value }).then(function (v) {
+    m.power = v; input.value = v || ''; toast(m.nickname + ' 님 전투력: ' + fmtPower(v));
+    if (m.nickname === state.user.nickname) { state.user.power = v; renderMyJob(); }
+  }).catch(function () { input.value = m.power || ''; });
+}
+
 function setMemberJob(idx, job) {
   var m = state.members[idx]; if (!m) return;
   call('setJob', { nickname: m.nickname, job: job }).then(function () {
@@ -881,16 +977,25 @@ function setMemberJob(idx, job) {
 
 /* ---------- 내 정보 ---------- */
 function renderMyJob() {
-  var job = state.user.job || '';
+  var job = state.user.job || '', power = state.user.power || 0;
   $('me-job').textContent = job ? job : '';
   $('p-job').innerHTML = jobOptions(job);
-  $('job-notice').classList.toggle('hidden', !!job);
+  if (document.activeElement !== $('p-power')) $('p-power').value = power ? fmtPower(power) : '';
+  var missing = [!job && '직업', !power && '전투력'].filter(Boolean);
+  $('job-notice-text').textContent = '아직 ' + missing.join('이랑 ') + '을 안 정했다냥!';
+  $('job-notice').classList.toggle('hidden', !missing.length);
+}
+function saveMyPower() {
+  call('setMyPower', { power: $('p-power').value }).then(function (v) {
+    state.user.power = v; $('p-power').value = ''; renderMyJob(); toast('전투력 ' + fmtPower(v) + '(으)로 갱신했다냥! 💪');
+    loadAuctions(true);
+  }).catch(function () {});
 }
 function saveMyJob() {
   var job = $('p-job').value;
   if (!job) return toast('직업을 선택하세요.', true);
   call('setMyJob', { job: job }).then(function () {
-    state.user.job = job; renderMyJob(); toast('직업을 ' + job + '(으)로 저장했습니다.');
+    state.user.job = job; renderMyJob(); toast('직업을 ' + job + '(으)로 저장했다냥'); loadAuctions(true);
   }).catch(function () {});
 }
 function changePassword() {
@@ -911,23 +1016,36 @@ function changePassword() {
     { id: 'I4', name: '5T 귀걸이', price: 15000, category: '공용', memo: '인기템' },
     { id: 'I5', name: '5T 투구', price: 10000, category: '공용', memo: '' }
   ];
+  function b(n, job, power, ok) { return { nickname: n, job: job, power: power, eligible: ok !== false }; }
   var auctions = [
-    { id: 'A1', itemName: '5T 귀걸이', price: 15000, status: '진행중', memo: '1넴 드랍', createdBy: '저니니', createdAt: now - 600000, joined: ['저니니', '치즈냥', '까망이'], declined: ['삼색이'], myEntry: '참여', jobs: { '저니니': '레인저', '치즈냥': '나이트', '까망이': '어쌔신', '삼색이': '오라클' }, winner: '' },
-    { id: 'A2', itemName: '5T 레인저 주무기', price: 15000, status: '진행중', memo: '', createdBy: '저니니', createdAt: now - 300000, joined: ['치즈냥'], declined: [], myEntry: '', jobs: { '치즈냥': '나이트' }, winner: '' },
-    { id: 'A3', itemName: '5T 투구', price: 10000, status: '마감', memo: '', createdBy: '저니니', createdAt: now - 86400000, closedAt: now - 80000000, joined: ['까망이', '삼색이'], declined: [], myEntry: '', jobs: {}, winner: '까망이' }
+    { id: 'A1', itemName: '5T 귀걸이', itemJob: '', canBid: true, price: 15000, status: '진행중', memo: '1넴 드랍', createdBy: '저니니', createdAt: now - 600000,
+      bidders: [b('까망이', '어쌔신', 65090), b('저니니', '레인저', 61200), b('치즈냥', '나이트', 48489)], declined: ['삼색이'], myEntry: '참여', winner: '' },
+    { id: 'A2', itemName: '5T 레인저 주무기', itemJob: '레인저', canBid: true, price: 15000, status: '진행중', memo: '', createdBy: '저니니', createdAt: now - 300000,
+      bidders: [b('거윽', '레인저', 56576), b('저니니', '레인저', 61200), b('치즈냥', '나이트', 48489, false)], declined: [], myEntry: '', winner: '' },
+    { id: 'A4', itemName: '5T 오라클 보조무기', itemJob: '오라클', canBid: false, price: 5800, status: '진행중', memo: '', createdBy: '저니니', createdAt: now - 200000,
+      bidders: [], declined: [], myEntry: '', winner: '' },
+    { id: 'A3', itemName: '5T 투구', itemJob: '', canBid: true, price: 10000, status: '마감', memo: '', createdBy: '저니니', createdAt: now - 86400000, closedAt: now - 80000000,
+      bidders: [b('까망이', '어쌔신', 65090), b('삼색이', '오라클', 51000)], declined: [], myEntry: '', winner: '까망이' }
   ];
+  auctions.forEach(function (a) {
+    a.bidders.sort(function (x, y) { return (y.eligible - x.eligible) || (y.power - x.power); });
+    var t = a.bidders.filter(function (x) { return x.eligible; })[0];
+    a.top = t ? { nickname: t.nickname, power: t.power, job: t.job } : null;
+    a.joined = a.bidders.map(function (x) { return x.nickname; });
+    a.jobs = {};
+  });
   var members = [
-    { nickname: '저니니', role: '길마', job: '레인저', hasPassword: true, lastLogin: now },
-    { nickname: '치즈냥', role: '길드원', job: '나이트', hasPassword: true, lastLogin: now - 3600000 },
-    { nickname: '까망이', role: '길드원', job: '어쌔신', hasPassword: false, lastLogin: null }
+    { nickname: '저니니', role: '길마', job: '레인저', power: 61200, hasPassword: true, lastLogin: now },
+    { nickname: '부냥이', role: '부길마', job: '나이트', power: 52000, hasPassword: true, lastLogin: now - 7200000 },
+    { nickname: '치즈냥', role: '기사단장', job: '나이트', power: 48489, hasPassword: true, lastLogin: now - 3600000 },
+    { nickname: '까망이', role: '길드원', job: '어쌔신', power: 65090, hasPassword: false, lastLogin: null }
   ];
-  var data = {
-    login: { token: 'demo', user: { nickname: '저니니', role: '길마', job: '레인저' } },
-    me: { nickname: '저니니', role: '길마', job: '레인저' },
-    listAuctions: auctions, listItems: items, listMembers: members
-  };
-  window.call = function (action) {
-    return new Promise(function (res) { setTimeout(function () { res(data[action] !== undefined ? data[action] : true); }, 150); });
+  var me = { nickname: '저니니', role: '길마', job: '레인저', power: 61200 };
+  var data = { login: { token: 'demo', user: me }, me: me, listAuctions: auctions, listItems: items, listMembers: members };
+  window.call = function (action, payload) {
+    var v = data[action];
+    if (action === 'setMyPower' || action === 'setPower') v = Number(String(payload.power).replace(/,/g, '')) || 0;
+    return new Promise(function (res) { setTimeout(function () { res(v !== undefined ? v : true); }, 120); });
   };
 })();
 
