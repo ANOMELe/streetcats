@@ -147,6 +147,20 @@
   tr.me td { background: #fff3dc; }
   .rank { font: 18px var(--hand); width: 34px; }
 
+  /* ---------- 낙찰 순번 / 참여 제외 ---------- */
+  .chip.won { background: #dcf1cc; border-color: var(--ok); }
+  .chip.out { background: #eee3d0; color: var(--muted); }
+  .bar { height: 12px; border: 2px solid var(--ink); border-radius: 99px; background: #fff; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--ok); }
+  .rot-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .rot-head .name { font: 19px var(--hand); }
+  .rot-group { font: 18px var(--hand); color: var(--accent); margin: 14px 0 8px; }
+  .opt-row { display: flex; align-items: center; gap: 8px; padding: 8px 2px; border-bottom: 2px dashed var(--line); }
+  .opt-row .nm { flex: 1; min-width: 0; font-weight: 800; }
+  .opt-row.on .nm { color: var(--muted); text-decoration: line-through; }
+  .linkbtn { background: none; border: 0; box-shadow: none; padding: 0; color: var(--muted); font: 13px "Nanum Gothic", sans-serif; font-weight: 700; text-decoration: underline; }
+  .linkbtn:active { transform: none; }
+
   /* ---------- 표 ---------- */
   table { width: 100%; border-collapse: separate; border-spacing: 0; }
   th, td { text-align: left; padding: 9px 8px; border-bottom: 2px dashed var(--line); vertical-align: middle; }
@@ -291,6 +305,23 @@
       <div id="manage-list"></div>
     </div>
 
+    <!-- 길마: 낙찰 순번 -->
+    <div id="t-rotation" class="tab hidden">
+      <div class="hero">
+        <div class="cat" data-cat="black" data-face="happy"></div>
+        <div><h2>누가 받을 차례냥?</h2><p>아이템마다 이번 회차에 받은 냥이·남은 냥이·안 받는 냥이를 보여준다냥. 남은 냥이가 다 받으면 자동으로 다음 회차!</p></div>
+        <div class="spacer"></div>
+        <button class="sm" onclick="loadRotation()">새로고침</button>
+      </div>
+      <div class="card" style="padding:12px 16px">
+        <div class="row">
+          <input id="r-filter" class="grow" placeholder="아이템·직업·닉네임으로 찾기">
+          <label style="margin:0;display:flex;align-items:center;gap:6px;color:var(--ink)"><input type="checkbox" id="r-mine" style="width:auto"> 내 직업만</label>
+        </div>
+      </div>
+      <div id="rotation-list"></div>
+    </div>
+
     <!-- 길마: 아이템 DB -->
     <div id="t-items" class="tab hidden">
       <div class="hero">
@@ -392,6 +423,11 @@
           <label>한 번 더 입력</label><input id="p-new2" type="password" autocomplete="new-password">
           <button class="primary full" onclick="changePassword()">바꾸기냥</button>
         </div>
+      </div>
+      <div class="card">
+        <h2>안 받을 아이템 고르기</h2>
+        <p class="muted" style="margin-top:-6px">여기서 <b>제외</b>한 아이템은 입찰할 수 없고, 낙찰 순번에서도 빠진다냥. 회차가 초기화돼도 <b>내가 취소할 때까지 유지</b>된다냥.</p>
+        <div id="my-optouts"></div>
       </div>
     </div>
   </section>
@@ -595,7 +631,7 @@ function startApp() {
   $('me-role').textContent = state.user.role;
   $('me-role').className = 'badge' + roleClass(state.user.role);
   var tabs = [['auction', '🐾 경매']];
-  if (isMaster) tabs.push(['manage', '📢 경매 열기'], ['items', '📦 아이템 창고'], ['members', '🐱 길드 냥이들']);
+  if (isMaster) tabs.push(['manage', '📢 경매 열기'], ['rotation', '🔄 낙찰 순번'], ['items', '📦 아이템 창고'], ['members', '🐱 길드 냥이들']);
   tabs.push(['me', '🏠 내 정보']);
   $('tabs').innerHTML = tabs.map(function (t) {
     return '<button data-tab="' + t[0] + '">' + t[1] + '</button>'; }).join('');
@@ -619,6 +655,8 @@ function setTab(tab) {
   if (tab === 'manage') { loadItems(); loadAuctions(); }
   if (tab === 'items') loadItems();
   if (tab === 'members') loadMembers();
+  if (tab === 'rotation') loadRotation();
+  if (tab === 'me') loadMyOptouts();
 }
 
 /* ---------- 경매 (길드원) ---------- */
@@ -638,11 +676,14 @@ function nameChips(names, winner, jobs) {
   }).join('') + '</div>';
 }
 
+var BLOCK_TEXT = { job: '직업 불일치', won: '이번 회차에 이미 낙찰', optout: '참여 제외 지정' };
+function blockText(reason) { return BLOCK_TEXT[reason] || ''; }
+
 function topBox(a) {
   var n = a.bidders.length;
   if (!a.top) {
     return '<div class="topbox none"><span class="crown">🐾</span><span>' +
-      (n ? '직업이 맞는 입찰자가 없다냥 (입찰 ' + n + '명)' : '아직 입찰한 냥이가 없다냥') + '</span>' +
+      (n ? '입찰할 수 있는 냥이가 없다냥 (입찰 ' + n + '명)' : '아직 입찰한 냥이가 없다냥') + '</span>' +
       (n ? '<button class="sm" style="margin-left:auto" onclick="showBidders(\'' + a.id + '\')">목록</button>' : '') + '</div>';
   }
   var me = a.top.nickname === state.user.nickname;
@@ -660,12 +701,12 @@ function showBidders(id) {
     var cls = (b.eligible ? '' : 'off') + (b.nickname === state.user.nickname ? ' me' : '');
     return '<tr class="' + cls + '"><td class="rank">' + (b.eligible ? (rank === 1 ? '👑' : rank) : '–') + '</td>' +
       '<td><b>' + esc(b.nickname) + '</b>' + (b.nickname === a.winner ? ' 🏆' : '') +
-      '<div class="muted">' + esc(b.job || '직업 미설정') + (b.eligible ? '' : ' · 직업 불일치') + '</div></td>' +
+      '<div class="muted">' + esc(b.job || '직업 미설정') + (b.eligible ? '' : ' · ' + blockText(b.reason || 'job')) + '</div></td>' +
       '<td class="num price">' + fmtPower(b.power) + '</td></tr>';
   }).join('');
   $('modal-body').innerHTML = '<h2 style="margin-right:60px">' + esc(a.itemName) + '</h2>' +
     '<p class="muted" style="margin-top:-6px">' + (a.itemJob ? '<span class="badge jobtag">' + esc(a.itemJob) + ' 전용</span> ' : '') +
-    '전투력 높은 순 · 입찰 ' + a.bidders.length + '명</p>' +
+    (a.round ? '🔄 ' + a.round + '회차 · ' : '') + '전투력 높은 순 · 입찰 ' + a.bidders.length + '명</p>' +
     (rows ? '<table><thead><tr><th>순위</th><th>닉네임</th><th class="num">전투력</th></tr></thead><tbody>' + rows + '</tbody></table>'
           : emptyState('아직 입찰한 냥이가 없다냥', 'gray'));
   $('modal').classList.remove('hidden');
@@ -681,8 +722,9 @@ function renderAuctions() {
     return '<div class="card auction">' +
       '<div class="row" style="justify-content:space-between">' +
         '<span class="title">' + esc(a.itemName) + '</span><span class="tag">' + won(a.price) + '</span></div>' +
-      (a.itemJob || a.memo ? '<div class="row">' + (a.itemJob ? '<span class="badge jobtag">🎯 ' + esc(a.itemJob) + ' 전용</span>' : '') +
-        (a.memo ? '<span class="muted">📝 ' + esc(a.memo) + '</span>' : '') + '</div>' : '') +
+      '<div class="row">' + (a.itemJob ? '<span class="badge jobtag">🎯 ' + esc(a.itemJob) + ' 전용</span>' : '<span class="badge">공용</span>') +
+        (a.round ? '<span class="badge">🔄 ' + a.round + '회차</span>' : '') +
+        (a.memo ? '<span class="muted">📝 ' + esc(a.memo) + '</span>' : '') + '</div>' +
       topBox(a) +
       '<div class="row"><span class="muted">내 선택:</span>' +
         (my === '참여' ? '<span class="badge join">참여한다냥</span>' : my === '불참' ? '<span class="badge decline">패스</span>' : '<span class="muted">아직 안 골랐다냥</span>') +
@@ -691,9 +733,9 @@ function renderAuctions() {
         ? '<div class="row">' +
           '<button class="ok grow big" ' + (my === '참여' ? 'disabled' : '') + ' onclick="setEntry(\'' + a.id + '\', true)">참여할래냥!</button>' +
           '<button class="no grow big" ' + (my === '불참' ? 'disabled' : '') + ' onclick="setEntry(\'' + a.id + '\', false)">이번엔 패스</button>' +
-          '</div>'
-        : '<div class="lock">🔒 ' + esc(a.itemJob) + ' 전용 장비라 입찰할 수 없다냥' + (state.user.job ? ' (내 직업: ' + esc(state.user.job) + ')' : ' — 내 정보에서 직업부터 정해라냥') + '</div>' +
-          (my === '참여' ? '<button class="no" onclick="setEntry(\'' + a.id + '\', false)">입찰 취소</button>' : '')) +
+          '</div>' +
+          '<div><button class="linkbtn" onclick="quickOptout(\'' + a.id + '\', true)">이 아이템은 앞으로 안 받을래</button></div>'
+        : lockBox(a)) +
       '<div class="muted">열린 시간 ' + fmtDate(a.createdAt) + '</div>' +
     '</div>';
   }).join('') : '<div class="card">' + emptyState('지금은 열린 경매가 없다냥… zZ', 'gray') + '</div>';
@@ -703,6 +745,29 @@ function renderAuctions() {
       return '<tr><td>' + esc(a.itemName) + '</td><td class="num">' + won(a.price) + '</td><td>' + (a.winner ? '🏆 ' + esc(a.winner) : '-') +
         '</td><td>' + a.joined.length + '명</td><td class="muted">' + fmtDate(a.closedAt) + '</td></tr>';
     }).join('') + '</tbody></table></div>' : '<div class="empty">아직 끝난 경매가 없다냥.</div>';
+}
+
+function lockBox(a) {
+  var my = a.myEntry, html;
+  if (a.myBlock === 'won') {
+    html = '<div class="lock">🎁 이번 회차(' + a.round + '회차)에 이미 받은 아이템이다냥. 모두 한 번씩 받으면 다시 입찰할 수 있다냥!</div>';
+  } else if (a.myBlock === 'optout') {
+    html = '<div class="lock">🙅 안 받기로 지정한 아이템이다냥.</div>' +
+      '<div><button class="sm" onclick="quickOptout(\'' + a.id + '\', false)">지정 취소하고 입찰하기</button></div>';
+  } else {
+    html = '<div class="lock">🔒 ' + esc(a.itemJob) + ' 전용 장비라 입찰할 수 없다냥' + (state.user.job ? ' (내 직업: ' + esc(state.user.job) + ')' : ' — 내 정보에서 직업부터 정해라냥') + '</div>';
+  }
+  return html + (my === '참여' ? '<button class="no" onclick="setEntry(\'' + a.id + '\', false)">입찰 취소</button>' : '');
+}
+
+function quickOptout(auctionId, on) {
+  var a = state.auctions.filter(function (x) { return x.id === auctionId; })[0]; if (!a) return;
+  var itemId = a.itemId, name = a.itemName;
+  if (on && !confirm('"' + name + '"은(는) 앞으로 안 받을까냥?\n입찰할 수 없게 되고, 내 정보에서 언제든 취소할 수 있다냥.')) return;
+  call('setOptout', { itemId: itemId, on: on }).then(function () {
+    toast(on ? '안 받을 아이템으로 지정했다냥' : '지정을 취소했다냥. 이제 입찰할 수 있다냥!');
+    loadAuctions(true);
+  }).catch(function () {});
 }
 
 function setEntry(id, join) {
@@ -758,7 +823,7 @@ function renderManage() {
     var pick = a.winner || (a.top ? a.top.nickname : '');
     var opts = '<option value="">낙찰자 선택</option>' + a.bidders.map(function (b) {
       return '<option value="' + esc(b.nickname) + '"' + (b.nickname === pick ? ' selected' : '') + '>' + esc(b.nickname) +
-        ' (' + fmtPower(b.power) + (b.eligible ? '' : ', 직업 불일치') + ')</option>'; }).join('');
+        ' (' + fmtPower(b.power) + (b.eligible ? '' : ', ' + blockText(b.reason || 'job')) + ')</option>'; }).join('');
     if (a.winner && a.joined.indexOf(a.winner) < 0) opts += '<option selected>' + esc(a.winner) + '</option>';
     return '<div class="card auction">' +
       '<div class="row" style="justify-content:space-between">' +
@@ -930,6 +995,7 @@ function renderMembers() {
       '<td>' + (m.hasPassword ? '설정됨' : '<span class="muted">미설정</span>') + '</td>' +
       '<td class="muted">' + fmtDate(m.lastLogin) + '</td>' +
       '<td class="num"><div class="row" style="justify-content:flex-end">' +
+        '<button class="sm" onclick="openMemberOptouts(state.members[' + idx + '].nickname)">안 받을 템</button>' +
         (!canManage ? '' :
           '<button class="sm" onclick="memberAct(' + idx + ',\'reset\')">비번 초기화</button>' +
           '<button class="sm no" onclick="memberAct(' + idx + ',\'delete\')">삭제</button>') +
@@ -977,6 +1043,94 @@ function setMemberJob(idx, job) {
     m.job = job; toast(m.nickname + ' 님 직업: ' + (job || '미설정'));
     if (m.nickname === state.user.nickname) { state.user.job = job; renderMyJob(); }
   }).catch(function () { loadMembers(); });
+}
+
+/* ---------- 참여 제외 (내 정보 / 길마용 팝업) ---------- */
+// items: memberItems 응답. 내 직업으로 받을 수 있는 아이템 + 이미 제외한 아이템만 보여줌
+function optoutListHtml(items, nickname) {
+  var list = sortItems(items.filter(function (i) { return i.jobOk || i.optedOut; }));
+  if (!list.length) return emptyState('받을 수 있는 아이템이 없다냥', 'gray');
+  var html = '', last = null, forModal = nickname !== state.user.nickname ? 1 : 0;
+  list.forEach(function (i) {
+    var cat = i.category || '분류 없음';
+    if (cat !== last) { html += '<div class="rot-group">' + esc(cat) + '</div>'; last = cat; }
+    html += '<div class="opt-row' + (i.optedOut ? ' on' : '') + '"><span class="nm">' + esc(i.name) + '</span>' +
+      (i.won ? '<span class="badge join">이번 회차 받음</span>' : '') +
+      (i.optedOut && i.optedBy && i.optedBy !== nickname ? '<span class="muted">' + esc(i.optedBy) + ' 지정</span>' : '') +
+      '<button class="sm ' + (i.optedOut ? 'primary' : '') + '" onclick="toggleOptout(\'' + i.id + '\', ' + !i.optedOut + ', ' + forModal + ')">' +
+      (i.optedOut ? '제외 중 · 취소' : '안 받기') + '</button></div>';
+  });
+  return html;
+}
+function loadMyOptouts() {
+  return call('myItems', {}, true).then(function (items) { $('my-optouts').innerHTML = optoutListHtml(items, state.user.nickname); }).catch(function () {});
+}
+function toggleOptout(itemId, on, forModal) {
+  var nickname = forModal ? state.optTarget : state.user.nickname;
+  call('setOptout', { itemId: itemId, on: on, nickname: nickname }).then(function () {
+    toast(on ? '안 받을 아이템으로 지정했다냥' : '지정을 취소했다냥');
+    if (forModal) openMemberOptouts(nickname); else loadMyOptouts();
+  }).catch(function () {});
+}
+function openMemberOptouts(nickname) {
+  state.optTarget = nickname;
+  call('memberItems', { nickname: nickname }).then(function (items) {
+    var m = state.members.filter(function (x) { return x.nickname === nickname; })[0] || {};
+    $('modal-body').innerHTML = '<h2 style="margin-right:60px">' + esc(nickname) + ' 님이 안 받을 아이템</h2>' +
+      '<p class="muted" style="margin-top:-6px">' + esc(m.job || '직업 미설정') + ' · 제외한 아이템은 입찰 불가, 순번에서도 빠진다냥</p>' +
+      optoutListHtml(items, nickname);
+    $('modal').classList.remove('hidden');
+  }).catch(function () {});
+}
+
+/* ---------- 낙찰 순번 (길마/부길마) ---------- */
+state.rotation = [];
+function loadRotation() {
+  return call('listRotation').then(function (list) { state.rotation = sortItems(list); renderRotation(); }).catch(function () {});
+}
+$('r-filter').addEventListener('input', renderRotation);
+$('r-mine').addEventListener('change', renderRotation);
+function renderRotation() {
+  var q = $('r-filter').value.trim().toLowerCase(), mine = $('r-mine').checked;
+  var list = state.rotation.filter(function (r) {
+    if (mine && r.job && r.job !== state.user.job) return false;
+    if (!q) return true;
+    var names = r.won.concat(r.remaining, r.optedOut).map(function (x) { return x.nickname; }).join(' ');
+    return (r.name + ' ' + (r.job || '공용') + ' ' + (r.category || '') + ' ' + names).toLowerCase().indexOf(q) >= 0;
+  });
+  if (!list.length) { $('rotation-list').innerHTML = '<div class="card">' + emptyState('보여줄 아이템이 없다냥', 'gray') + '</div>'; return; }
+  var html = '', last = null;
+  list.forEach(function (r) {
+    var cat = r.category || '분류 없음';
+    if (cat !== last) { html += '<div class="rot-group">' + esc(cat) + '</div>'; last = cat; }
+    var total = r.won.length + r.remaining.length, pct = total ? Math.round(r.won.length / total * 100) : 0;
+    html += '<div class="card" style="display:grid;gap:10px">' +
+      '<div class="rot-head"><span class="name">' + esc(r.name) + '</span>' +
+        (r.job ? '<span class="badge jobtag">' + esc(r.job) + '</span>' : '<span class="badge">공용</span>') +
+        '<span class="badge">🔄 ' + r.round + '회차</span>' +
+        '<span class="spacer" style="flex:1"></span>' +
+        '<button class="sm" onclick="resetRound(\'' + r.id + '\')">다음 회차로</button></div>' +
+      '<div class="row" style="gap:10px"><div class="bar grow"><i style="width:' + pct + '%"></i></div>' +
+        '<span class="hand" style="font-size:16px">' + r.won.length + ' / ' + total + '명 받음</span></div>' +
+      '<div><div class="muted" style="margin-bottom:4px">🎁 이번 회차에 받은 냥이</div>' + chipList(r.won, 'won') + '</div>' +
+      '<div><div class="muted" style="margin-bottom:4px">⏳ 아직 못 받은 냥이 (전투력순)</div>' + chipList(r.remaining, '', true) + '</div>' +
+      (r.optedOut.length ? '<div><div class="muted" style="margin-bottom:4px">🙅 안 받는 냥이</div>' + chipList(r.optedOut, 'out') + '</div>' : '') +
+    '</div>';
+  });
+  $('rotation-list').innerHTML = html;
+}
+function chipList(arr, cls, withPower) {
+  if (!arr.length) return '<span class="muted">없음</span>';
+  return '<div class="chips">' + arr.map(function (x) {
+    return '<span class="chip ' + cls + (x.nickname === state.user.nickname ? ' me' : '') + '">' + esc(x.nickname) +
+      (withPower && x.power ? ' <span style="opacity:.7">· ' + fmtPower(x.power) + '</span>' : '') + '</span>';
+  }).join('') + '</div>';
+}
+function resetRound(itemId) {
+  var r = state.rotation.filter(function (x) { return x.id === itemId; })[0]; if (!r) return;
+  var name = r.name, round = r.round;
+  if (!confirm('"' + name + '"을(를) ' + (round + 1) + '회차로 넘길까냥?\n이번 회차에 받은 기록과 상관없이 모두 다시 입찰할 수 있게 된다냥. (기록은 남음)')) return;
+  call('resetRound', { itemId: itemId }).then(function (n) { toast(n + '회차로 넘겼다냥'); loadRotation(); }).catch(function () {});
 }
 
 /* ---------- 내 정보 ---------- */
