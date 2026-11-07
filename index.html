@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#ffd986">
-<title>길냥이집 경매장</title>
+<title>길냥이집</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🐾%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -196,6 +196,48 @@
   .deco.leaf { width: 46px; animation: bob 5s ease-in-out infinite; }
   @keyframes wiggle { 0%, 92%, 100% { transform: rotate(0); } 95% { transform: rotate(-4deg); } 98% { transform: rotate(4deg); } }
   .peek svg, .hero .cat svg { animation: wiggle 6s ease-in-out infinite; transform-origin: 50% 90%; }
+  /* ---------- 하위 메뉴 ---------- */
+  .subtabs { display: flex; gap: 8px; flex-wrap: wrap; margin: -4px 0 16px; }
+  .subtabs button { font-size: 15px; padding: 7px 14px; background: var(--panel); box-shadow: 0 3px 0 var(--ink); }
+  .subtabs button.on { background: var(--accent); }
+
+  /* ---------- 표 안에서 고치기 + 한꺼번에 저장 ---------- */
+  table.edit input, table.edit select { padding: 5px 8px; border-radius: 10px; border-width: 2px; }
+  table.edit td { padding: 6px 5px; }
+  input.chg, select.chg { border-color: var(--accent); background: #fff3dc; }
+  tr.del td { opacity: .4; text-decoration: line-through; }
+  tr.del td:last-child { opacity: 1; text-decoration: none; }
+  tr.dup td:first-child input { border-color: var(--no); }
+  .was { font-size: 11px; color: var(--muted); font-weight: 700; }
+  .savebar { position: sticky; bottom: 14px; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+    background: var(--ink); color: #fff8ec; border: 2.5px solid var(--ink); border-radius: 16px; padding: 9px 14px; margin-top: 14px;
+    box-shadow: 0 4px 0 rgba(0,0,0,.25); font: 16px var(--hand); }
+  .savebar.idle { position: static; background: var(--panel2); color: var(--muted); border: 2.5px dashed var(--line); box-shadow: none; }
+  .savebar.idle button { opacity: .5; }
+  .tgl { min-width: 84px; padding: 5px 10px; font-size: 14px; border-radius: 99px; box-shadow: 0 2px 0 var(--ink); background: var(--ok); color: #fff; }
+  .tgl.off { background: #eee3d0; color: var(--muted); }
+  .opt-row.chg { background: #fff3dc; border-radius: 10px; }
+
+  /* ---------- 닉네임 × 아이템 표 ---------- */
+  .mx-on { color: var(--ok); } .mx-off { color: var(--no); }
+  .mx-wrap { overflow: auto; max-height: 72vh; border: 2.5px solid var(--ink); border-radius: 14px; background: #fffdf8; }
+  table.mx { width: auto; border-collapse: separate; border-spacing: 0; }
+  .mx th, .mx td { padding: 4px; border-bottom: 1.5px dashed var(--line); border-right: 1.5px dashed var(--line); text-align: center; white-space: nowrap; border-radius: 0 !important; }
+  .mx thead th { position: sticky; top: 0; z-index: 2; background: var(--panel2); vertical-align: bottom; border-bottom: 2.5px solid var(--ink); }
+  .mx th.it { cursor: pointer; padding: 6px 3px; }
+  .mx th.it span { display: inline-block; writing-mode: vertical-rl; max-height: 9.5em; overflow: hidden; text-overflow: ellipsis; color: var(--ink); font-size: 12px; }
+  .mx th.it:hover { background: #ffe6b0; }
+  .mx th.cg { height: 26px; font: 12px var(--hand); color: var(--accent); }
+  .mx thead tr + tr th { top: 26px; }
+  .mx .nk { position: sticky; left: 0; z-index: 1; background: var(--panel); text-align: left; padding: 4px 8px; font-weight: 800; }
+  .mx thead .nk { z-index: 3; background: var(--panel2); }
+  .mx .nk small { display: block; color: var(--muted); font-weight: 700; font-size: 11px; }
+  .mx td.memo input { width: 150px; padding: 4px 7px; border-radius: 9px; border-width: 2px; font-size: 13px; }
+  .mx td.c { cursor: pointer; min-width: 32px; font-weight: 800; font-size: 16px; color: var(--ok); user-select: none; }
+  .mx td.c.off { background: #fde2dc; color: var(--no); }
+  .mx td.c.chg { box-shadow: inset 0 0 0 3px var(--accent); }
+  .mx td.c:hover { filter: brightness(.95); background-color: #fff3dc; }
+  .mx td.na { color: #d6c6ad; background: #f6f0e4; }
   @media (prefers-reduced-motion: reduce) { .deco.leaf, .peek svg, .hero .cat svg { animation: none; } }
   @media (max-width: 560px) {
     .hero .cat { width: 62px; }
@@ -203,6 +245,7 @@
     .brand h1 { font-size: 21px; }
     .brand .logo { width: 42px; }
     .deco.side { display: none; }
+    .mx td.memo input { width: 96px; }
   }
 </style>
 </head>
@@ -249,7 +292,7 @@
     <header class="top">
       <div class="brand">
         <div class="logo" data-cat="orange" data-face="happy"></div>
-        <div><h1>길냥이집 경매장</h1><small>길드 레이드 아이템 경매</small></div>
+        <div><h1>길냥이집</h1><small>경매 할 땐 내 정보 갱신하라냥</small></div>
       </div>
       <div class="userchip">
         <span id="me-nick"></span><span id="me-job" class="muted"></span><span id="me-role" class="badge"></span>
@@ -329,48 +372,36 @@
         <div><h2>아이템 창고다냥</h2><p>경매에 쓸 아이템과 기본 가격을 넣어두는 곳이다냥.</p></div>
       </div>
       <div class="card">
-        <h2 id="i-title">아이템 넣기</h2>
-        <input type="hidden" id="i-id">
+        <h2>아이템 넣기</h2>
         <div class="row">
           <div class="grow"><label>아이템명</label><input id="i-name" placeholder="예: 5T 투구"></div>
           <div class="grow"><label>가격</label><input id="i-price" type="number" min="0" step="1"></div>
         </div>
         <div class="row">
           <div class="grow"><label>입찰 가능 직업</label><select id="i-job"></select></div>
-          <div class="grow"><label>분류 (선택)</label><input id="i-cat" placeholder="예: 주무기, 보조무기, 스킬"></div>
+          <div class="grow"><label>분류 (선택)</label><input id="i-cat" list="cat-list" placeholder="예: 주무기, 보조무기, 스킬"></div>
           <div class="grow"><label>메모 (선택)</label><input id="i-memo"></div>
         </div>
-        <div class="row" style="margin-top:16px">
-          <button class="primary grow" onclick="saveItem()">저장하기냥</button>
-          <button id="i-cancel" class="hidden" onclick="resetItemForm()">취소</button>
-        </div>
+        <button class="primary full" onclick="saveItem()">넣기냥</button>
       </div>
       <div class="card">
         <div class="row" style="justify-content:space-between;margin-bottom:10px">
           <h2 style="margin:0">창고 목록 <span class="muted" id="i-count"></span></h2>
-          <div class="row">
-            <input id="i-filter" placeholder="찾기" style="max-width:180px">
-            <button class="sm" id="b-toggle" onclick="toggleBulk()">가격 한꺼번에 고치기</button>
-          </div>
+          <input id="i-filter" placeholder="찾기" style="max-width:180px">
         </div>
-        <div id="b-bar" class="pricebox hidden" style="flex-wrap:wrap;margin:0 0 12px">
-          <div class="row">
-            <span class="muted">찾은 항목 가격에</span>
-            <input id="b-pct" type="number" value="100" min="0" step="1" style="width:90px;padding:6px 8px">
-            <span class="muted">% 적용</span>
-            <button class="sm" onclick="applyPct()">적용</button>
-            <button class="sm" onclick="resetBulk()">되돌리기</button>
-          </div>
-          <div class="row">
-            <span class="muted" id="b-count">변경 0건</span>
-            <button class="sm primary" id="b-save" onclick="saveBulk()">한꺼번에 저장</button>
-            <button class="sm" onclick="toggleBulk()">닫기</button>
-          </div>
-        </div>
-        <div class="table-scroll"><table>
+        <p class="muted" style="margin:-4px 0 10px">목록에서 바로 고치고 <b>한꺼번에 저장</b>을 누르라냥. 고친 칸은 주황색, 삭제는 저장할 때 반영된다냥.</p>
+        <div class="table-scroll"><table class="edit">
           <thead><tr><th>아이템명</th><th>직업</th><th>분류</th><th class="num">가격</th><th>메모</th><th></th></tr></thead>
           <tbody id="i-list"></tbody>
         </table></div>
+        <div class="savebar idle" id="i-bar">
+          <span id="i-changes">고친 게 없다냥</span>
+          <div class="row">
+            <button class="sm" onclick="resetItemEdits()">되돌리기</button>
+            <button class="sm primary" id="i-save" onclick="saveItemEdits()">한꺼번에 저장</button>
+          </div>
+        </div>
+        <datalist id="cat-list"></datalist>
       </div>
     </div>
 
@@ -380,19 +411,60 @@
         <div class="cat" data-cat="white" data-face="happy"></div>
         <div><h2>우리 길드 냥이들</h2><p>길드원 닉네임을 등록하고 직업·권한을 관리하라냥.</p></div>
       </div>
-      <div class="card">
+      <nav class="subtabs" id="m-subtabs">
+        <button data-sub="list">📋 길드원 목록</button>
+        <button data-sub="add">➕ 새 냥이 등록</button>
+        <button data-sub="optout">🙅 안 받을 템 지정</button>
+      </nav>
+
+      <div class="card sub" id="ms-add">
         <h2>새 냥이 등록</h2>
-        <p class="muted">한 줄에 한 명씩 <b>닉네임 직업 전투력</b>으로 적어라냥 (직업·전투력은 생략 가능). 시트에서 열을 복사해 붙여넣어도 된다냥. 등록된 냥이는 처음 로그인할 때 비밀번호를 직접 정한다냥.</p>
-        <p class="muted" id="m-jobs"></p>
-        <textarea id="m-names" placeholder="닉네임1 나이트 52000&#10;닉네임2 오라클&#10;닉네임3"></textarea>
-        <button class="primary full" onclick="addMembers()">등록하기냥</button>
+        <p class="muted" style="margin-top:-6px">한 칸에 하나씩 적고 <b>등록하기냥</b>을 누르면 한 번에 저장된다냥. 닉네임 칸에 시트에서 복사한 여러 줄(닉네임 직업 전투력)을 붙여넣으면 줄마다 나눠준다냥. 등록된 냥이는 처음 로그인할 때 비밀번호를 직접 정한다냥.</p>
+        <div class="table-scroll"><table class="edit">
+          <thead><tr><th>닉네임</th><th>직업</th><th class="num">전투력</th><th>권한</th><th></th></tr></thead>
+          <tbody id="n-rows"></tbody>
+        </table></div>
+        <div class="row" style="margin-top:12px">
+          <button class="sm" onclick="addNewRow()">+ 한 줄 더</button>
+          <button class="sm" onclick="clearNewRows()">모두 비우기</button>
+        </div>
+        <button class="primary full big" id="n-save" onclick="addMembers()">등록하기냥</button>
       </div>
-      <div class="card">
+
+      <div class="card sub" id="ms-list">
         <h2>길드원 목록 <span class="muted" id="m-count"></span></h2>
-        <div class="table-scroll"><table>
+        <p class="muted" style="margin-top:-6px">직업·전투력·권한을 고치고 <b>한꺼번에 저장</b>을 누르라냥.</p>
+        <div class="table-scroll"><table class="edit">
           <thead><tr><th>닉네임</th><th>직업</th><th class="num">전투력</th><th>권한</th><th>비밀번호</th><th>최근 로그인</th><th></th></tr></thead>
           <tbody id="m-list"></tbody>
         </table></div>
+        <div class="savebar idle" id="m-bar">
+          <span id="m-changes">고친 게 없다냥</span>
+          <div class="row">
+            <button class="sm" onclick="resetMemberEdits()">되돌리기</button>
+            <button class="sm primary" id="m-save" onclick="saveMemberEdits()">한꺼번에 저장</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card sub" id="ms-optout">
+        <div class="row" style="justify-content:space-between">
+          <h2 style="margin:0">안 받을 템 지정</h2>
+          <button class="sm" onclick="loadMatrix()">새로고침</button>
+        </div>
+        <p class="muted">칸을 눌러 <b class="mx-on">○ 받기</b> / <b class="mx-off">✕ 안 받기</b>를 바꾸고 <b>한꺼번에 저장</b>하라냥. <span style="color:#bba58a">·</span> 는 직업이 안 맞아 원래 못 받는 칸. 아이템 이름을 누르면 그 열 전체를 바꾼다냥.</p>
+        <div class="row" style="margin-bottom:10px">
+          <input id="x-item" class="grow" placeholder="아이템·분류·직업으로 찾기">
+          <input id="x-nick" class="grow" placeholder="닉네임·직업으로 찾기">
+        </div>
+        <div class="mx-wrap"><table class="mx" id="x-table"></table></div>
+        <div class="savebar idle" id="x-bar">
+          <span id="x-changes">고친 게 없다냥</span>
+          <div class="row">
+            <button class="sm" onclick="resetMatrix()">되돌리기</button>
+            <button class="sm primary" id="x-save" onclick="saveMatrix()">한꺼번에 저장</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -426,7 +498,7 @@
       </div>
       <div class="card">
         <h2>안 받을 아이템 고르기</h2>
-        <p class="muted" style="margin-top:-6px">여기서 <b>제외</b>한 아이템은 입찰할 수 없고, 낙찰 순번에서도 빠진다냥. 회차가 초기화돼도 <b>내가 취소할 때까지 유지</b>된다냥.</p>
+        <p class="muted" style="margin-top:-6px">눌러서 <b>받기 / 안 받기</b>를 다 고른 뒤 <b>한꺼번에 저장</b>하라냥. 안 받기로 한 아이템은 입찰할 수 없고, 낙찰 순번에서도 빠진다냥. 회차가 초기화돼도 <b>내가 취소할 때까지 유지</b>된다냥.</p>
         <div id="my-optouts"></div>
       </div>
     </div>
@@ -434,7 +506,8 @@
 </div>
 
 <script>
-var state = { token: null, user: null, auctions: [], items: [], members: [], tab: 'auction', timer: null, bulk: null };
+var state = { token: null, user: null, auctions: [], items: [], members: [], tab: 'auction', timer: null,
+  itemEdits: {}, itemDel: {}, memEdits: {}, mx: null, mxView: null, mxEdits: {}, mxMemo: {}, memberSub: null };
 var TOKEN_KEY = 'guildAuctionToken';
 var API_URL = 'https://script.google.com/macros/s/AKfycbxXhBPqLJu1UD2ncq0hQbjj6enVpckAauDxdQrpU3KFJuTv1r_L7XkgSb7ijHrfIHZXCA/exec';
 var JOBS = ['나이트', '버서커', '어쌔신', '레인저', '엘리멘탈리스트', '오라클', '블레스드', '아티산'];
@@ -627,7 +700,6 @@ function startApp() {
   var isMaster = isAdmin(state.user.role);
   $('me-nick').textContent = state.user.nickname;
   renderMyJob();
-  $('m-jobs').textContent = '직업: ' + JOBS.join(', ');
   $('me-role').textContent = state.user.role;
   $('me-role').className = 'badge' + roleClass(state.user.role);
   var tabs = [['auction', '🐾 경매']];
@@ -648,13 +720,17 @@ function startApp() {
 function stopTimer() { if (state.timer) clearInterval(state.timer); state.timer = null; }
 
 function setTab(tab) {
+  if (state.tab !== tab && $('t-' + state.tab) && !$('t-' + state.tab).classList.contains('hidden')) {
+    if (!confirmLeave()) return;
+    dropEdits();
+  }
   state.tab = tab; store('guildAuctionTab', tab);
   document.querySelectorAll('.tab').forEach(function (el) { el.classList.toggle('hidden', el.id !== 't-' + tab); });
   $('tabs').querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === tab); });
   if (tab === 'auction') loadAuctions();
   if (tab === 'manage') { loadItems(); loadAuctions(); }
   if (tab === 'items') loadItems();
-  if (tab === 'members') loadMembers();
+  if (tab === 'members') setMemberSub(state.memberSub || load('guildMemberSub') || 'list', true);
   if (tab === 'rotation') loadRotation();
   if (tab === 'me') loadMyOptouts();
 }
@@ -711,7 +787,12 @@ function showBidders(id) {
           : emptyState('아직 입찰한 냥이가 없다냥', 'gray'));
   $('modal').classList.remove('hidden');
 }
-function closeModal() { $('modal').classList.add('hidden'); }
+function closeModal() {
+  if ($('modal').classList.contains('hidden')) return;
+  if (optChanges('modal').length && !confirm('저장 안 한 변경이 있다냥. 그냥 닫을까?')) return;
+  optUI.modal = null;
+  $('modal').classList.add('hidden');
+}
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
 
 function renderAuctions() {
@@ -873,14 +954,39 @@ function sortItems(list) {
 }
 function filteredItems() {
   var q = $('i-filter').value.trim().toLowerCase();
-  return state.items.filter(function (i) { return !q || (i.name + ' ' + (i.job || '공용') + ' ' + (i.category || '') + ' ' + (i.memo || '')).toLowerCase().indexOf(q) >= 0; });
+  return state.items.filter(function (i) {
+    var v = function (f) { return itemVal(i, f); };
+    return !q || (v('name') + ' ' + v('job') + ' ' + v('category') + ' ' + v('memo')).toLowerCase().indexOf(q) >= 0;
+  });
 }
+
+// 목록에서 고친 값은 state.itemEdits[id][필드], 삭제 예정은 state.itemDel[id] 에 모았다가 한꺼번에 저장
+var ITEM_FIELDS = ['name', 'job', 'category', 'price', 'memo'];
+function itemOrig(i, f) { return f === 'job' ? (i.job || '공용') : f === 'price' ? String(i.price) : String(i[f] == null ? '' : i[f]); }
+function itemVal(i, f) { var e = state.itemEdits[i.id]; return e && e[f] !== undefined ? e[f] : itemOrig(i, f); }
+function normField(f, v) { v = String(v == null ? '' : v).trim(); return f === 'price' && v !== '' ? String(Number(v)) : v; }
+function itemChanged(i, f) { return normField(f, itemVal(i, f)) !== normField(f, itemOrig(i, f)); }
+function itemChanges() {
+  var out = [];
+  state.items.forEach(function (i) {
+    if (state.itemDel[i.id] || !state.itemEdits[i.id]) return;
+    var c = { id: i.id }, n = 0;
+    ITEM_FIELDS.forEach(function (f) { if (itemChanged(i, f)) { c[f] = normField(f, itemVal(i, f)); n++; } });
+    if (n) out.push(c);
+  });
+  return out;
+}
+function itemDeletes() { return Object.keys(state.itemDel).filter(function (id) { return state.itemDel[id]; }); }
+function itemsDirty() { return itemChanges().length + itemDeletes().length; }
 
 $('i-filter').addEventListener('input', renderItems);
 function renderItems() {
   var list = filteredItems();
-  var bulk = state.bulk;
   $('i-count').textContent = '(' + state.items.length + ')';
+  var cats = {};
+  state.items.forEach(function (i) { if (i.category) cats[i.category] = 1; });
+  $('cat-list').innerHTML = Object.keys(cats).map(function (c) { return '<option value="' + esc(c) + '">'; }).join('');
+  var jobOpts = ['공용'].concat(JOBS);
   var lastCat = null, html = '';
   list.forEach(function (i) {
     var cat = i.category || '분류 없음';
@@ -888,119 +994,244 @@ function renderItems() {
       html += '<tr><td colspan="6" style="background:var(--panel2);font-weight:700;color:var(--accent)">' + esc(cat) + '</td></tr>';
       lastCat = cat;
     }
-    var priceCell;
-    if (bulk) {
-      var v = bulk[i.id] !== undefined ? bulk[i.id] : i.price;
-      var changed = bulk[i.id] !== undefined && Number(bulk[i.id]) !== i.price;
-      priceCell = '<td class="num"><input type="number" min="0" step="1" data-bulk="' + esc(i.id) + '" value="' + esc(v) + '" style="width:110px;padding:5px 8px;text-align:right' +
-        (changed ? ';border-color:var(--accent)' : '') + '">' +
-        (changed ? '<div class="muted" style="font-size:11px">기존 ' + won(i.price) + '</div>' : '') + '</td>';
-    } else {
-      priceCell = '<td class="num price">' + won(i.price) + '</td>';
-    }
-    html += '<tr><td>' + esc(i.name) + '</td><td>' + (i.job ? '<span class="badge jobtag">' + esc(i.job) + '</span>' : '<span class="muted">공용</span>') +
-      '</td><td>' + esc(i.category) + '</td>' + priceCell + '<td class="muted">' + esc(i.memo) +
-      '</td><td class="num"><div class="row" style="justify-content:flex-end">' +
-      (bulk ? '' : '<button class="sm" onclick="editItem(\'' + i.id + '\')">수정</button>' +
-      '<button class="sm no" onclick="deleteItem(\'' + i.id + '\')">삭제</button>') + '</div></td></tr>';
+    var del = !!state.itemDel[i.id];
+    var inp = function (f, attrs) {
+      return '<input data-item="' + esc(i.id) + '" data-f="' + f + '" value="' + esc(itemVal(i, f)) + '"' + (itemChanged(i, f) ? ' class="chg"' : '') +
+        (del ? ' disabled' : '') + ' ' + (attrs || '') + '>';
+    };
+    var jv = itemVal(i, 'job');
+    html += '<tr class="' + (del ? 'del' : '') + '">' +
+      '<td>' + inp('name', 'style="min-width:170px"') + '</td>' +
+      '<td><select data-item="' + esc(i.id) + '" data-f="job"' + (itemChanged(i, 'job') ? ' class="chg"' : '') + (del ? ' disabled' : '') + ' style="min-width:110px">' +
+        jobOpts.map(function (j) { return '<option' + (j === jv ? ' selected' : '') + '>' + j + '</option>'; }).join('') + '</select></td>' +
+      '<td>' + inp('category', 'list="cat-list" style="width:110px"') + '</td>' +
+      '<td class="num">' + inp('price', 'type="number" min="0" step="1" style="width:110px;text-align:right"') +
+        (itemChanged(i, 'price') ? '<div class="was">기존 ' + won(i.price) + '</div>' : '') + '</td>' +
+      '<td>' + inp('memo', 'style="min-width:120px"') + '</td>' +
+      '<td class="num"><button class="sm ' + (del ? '' : 'no') + '" onclick="toggleItemDelete(\'' + i.id + '\')">' + (del ? '삭제 취소' : '삭제') + '</button></td></tr>';
   });
-  $('i-list').innerHTML = html || '<tr><td colspan="6">' + emptyState('창고가 텅 비었다냥', 'gray') + '</td></tr>';
-  updateBulkCount();
+  $('i-list').innerHTML = html || '<tr><td colspan="6">' + emptyState(state.items.length ? '못 찾았다냥' : '창고가 텅 비었다냥', 'gray') + '</td></tr>';
+  updateItemBar();
 }
 
-/* ---------- 가격 일괄 수정 ---------- */
-$('i-list').addEventListener('input', function (e) {
-  var id = e.target.getAttribute && e.target.getAttribute('data-bulk');
-  if (!id || !state.bulk) return;
-  state.bulk[id] = e.target.value;
-  var item = state.items.filter(function (x) { return x.id === id; })[0];
-  e.target.style.borderColor = item && Number(e.target.value) !== item.price ? 'var(--accent)' : '';
-  updateBulkCount();
-});
-function bulkChanges() {
-  if (!state.bulk) return [];
-  return state.items.filter(function (i) {
-    var v = state.bulk[i.id];
-    return v !== undefined && v !== '' && Number(v) !== i.price;
-  }).map(function (i) { return { id: i.id, price: Number(state.bulk[i.id]) }; });
+$('i-list').addEventListener('input', onItemEdit);
+$('i-list').addEventListener('change', onItemEdit);
+function onItemEdit(e) {
+  var id = e.target.getAttribute && e.target.getAttribute('data-item'), f = e.target.getAttribute && e.target.getAttribute('data-f');
+  if (!id || !f) return;
+  var item = state.items.filter(function (x) { return x.id === id; })[0]; if (!item) return;
+  (state.itemEdits[id] = state.itemEdits[id] || {})[f] = e.target.value;
+  e.target.classList.toggle('chg', itemChanged(item, f));
+  if (f === 'price') {
+    var td = e.target.parentNode, was = td.querySelector('.was');
+    if (itemChanged(item, f) && !was) td.insertAdjacentHTML('beforeend', '<div class="was">기존 ' + won(item.price) + '</div>');
+    if (!itemChanged(item, f) && was) was.remove();
+  }
+  updateItemBar();
 }
-function updateBulkCount() { if (state.bulk) $('b-count').textContent = '변경 ' + bulkChanges().length + '건'; }
-function toggleBulk() {
-  if (state.bulk && bulkChanges().length && !confirm('저장하지 않은 변경 ' + bulkChanges().length + '건이 있습니다. 닫을까요?')) return;
-  state.bulk = state.bulk ? null : {};
-  $('b-bar').classList.toggle('hidden', !state.bulk);
-  $('b-toggle').classList.toggle('primary', !!state.bulk);
-  renderItems();
+function updateItemBar() {
+  var c = itemChanges().length, d = itemDeletes().length;
+  $('i-changes').textContent = c || d ? '수정 ' + c + '건' + (d ? ' · 삭제 ' + d + '건' : '') + ' 저장 안 했다냥' : '고친 게 없다냥';
+  $('i-bar').classList.toggle('idle', !(c || d));
 }
-function applyPct() {
-  var pct = Number($('b-pct').value);
-  if (isNaN(pct) || pct < 0) return toast('비율을 숫자로 입력하세요.', true);
-  var list = filteredItems();
-  list.forEach(function (i) { state.bulk[i.id] = String(Math.round(i.price * pct / 100)); });
-  renderItems();
-  toast(list.length + '개 항목에 ' + pct + '% 적용 (저장 전)');
-}
-function resetBulk() { state.bulk = {}; renderItems(); }
-function saveBulk() {
-  var changes = bulkChanges();
-  if (!changes.length) return toast('변경된 가격이 없습니다.', true);
-  if (changes.some(function (c) { return isNaN(c.price) || c.price < 0; })) return toast('가격이 올바르지 않은 항목이 있습니다.', true);
-  if (!confirm(changes.length + '개 아이템 가격을 저장할까요?')) return;
-  $('b-save').disabled = true;
-  call('savePrices', { changes: changes }).then(function (n) {
-    toast(n + '개 가격을 저장했습니다.');
-    state.bulk = {};
+function toggleItemDelete(id) { state.itemDel[id] = !state.itemDel[id]; renderItems(); }
+function resetItemEdits() { state.itemEdits = {}; state.itemDel = {}; renderItems(); }
+function saveItemEdits() {
+  var changes = itemChanges(), deletes = itemDeletes();
+  if (!changes.length && !deletes.length) return toast('고친 게 없다냥', true);
+  if (changes.some(function (c) { return c.name === ''; })) return toast('아이템명이 빈 칸이 있다냥', true);
+  if (changes.some(function (c) { return c.price !== undefined && (c.price === '' || isNaN(Number(c.price)) || Number(c.price) < 0); })) return toast('가격이 올바르지 않은 칸이 있다냥', true);
+  if (deletes.length && !confirm('수정 ' + changes.length + '건, 삭제 ' + deletes.length + '건을 저장할까요?\n(삭제해도 이미 등록된 경매에는 영향 없음)')) return;
+  $('i-save').disabled = true;
+  call('saveItems', { changes: changes, deletes: deletes }).then(function (r) {
+    toast('저장했다냥! 수정 ' + r.saved + '건' + (r.deleted ? ', 삭제 ' + r.deleted + '건' : ''));
+    state.itemEdits = {}; state.itemDel = {};
     return loadItems();
-  }).catch(function () {}).then(function () { $('b-save').disabled = false; });
+  }).catch(function () {}).then(function () { $('i-save').disabled = false; });
 }
 
 function saveItem() {
-  call('saveItem', { id: $('i-id').value, name: $('i-name').value, price: $('i-price').value, category: $('i-cat').value, memo: $('i-memo').value, job: $('i-job').value })
-    .then(function () { toast('저장했습니다.'); resetItemForm(); loadItems(); $('i-name').focus(); }).catch(function () {});
-}
-function editItem(id) {
-  var i = state.items.filter(function (x) { return x.id === id; })[0]; if (!i) return;
-  $('i-id').value = i.id; $('i-name').value = i.name; $('i-price').value = i.price; $('i-cat').value = i.category || ''; $('i-memo').value = i.memo || ''; $('i-job').value = i.job || '공용';
-  $('i-title').textContent = '아이템 수정'; $('i-cancel').classList.remove('hidden');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  call('saveItem', { name: $('i-name').value, price: $('i-price').value, category: $('i-cat').value, memo: $('i-memo').value, job: $('i-job').value })
+    .then(function () { toast('창고에 넣었다냥'); resetItemForm(); loadItems(); $('i-name').focus(); }).catch(function () {});
 }
 function resetItemForm() {
-  ['i-id', 'i-name', 'i-price', 'i-cat', 'i-memo'].forEach(function (k) { $(k).value = ''; });
+  ['i-name', 'i-price', 'i-cat', 'i-memo'].forEach(function (k) { $(k).value = ''; });
   $('i-job').value = '공용';
-  $('i-title').textContent = '아이템 등록'; $('i-cancel').classList.add('hidden');
-}
-function deleteItem(id) {
-  if (!confirm('이 아이템을 DB에서 삭제할까요? (이미 등록된 경매에는 영향 없음)')) return;
-  call('deleteItem', { id: id }).then(function () { toast('삭제했습니다.'); loadItems(); }).catch(function () {});
 }
 
 /* ---------- 길드원 (길마) ---------- */
 function loadMembers() {
-  return call('listMembers').then(function (list) { state.members = list; renderMembers(); }).catch(function () {});
+  return call('listMembers').then(function (list) { state.members = list; state.memEdits = {}; renderMembers(); }).catch(function () {});
+}
+
+// 하위 메뉴: list(길드원 목록) / add(새 냥이 등록) / optout(안 받을 템 지정)
+$('m-subtabs').querySelectorAll('button').forEach(function (b) { b.onclick = function () { setMemberSub(b.dataset.sub); }; });
+function setMemberSub(sub, force) {
+  if (!force && sub !== state.memberSub && !confirmLeave()) return;
+  if (!force && sub !== state.memberSub) dropEdits();
+  state.memberSub = sub; store('guildMemberSub', sub);
+  $('m-subtabs').querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.sub === sub); });
+  ['list', 'add', 'optout'].forEach(function (s) { $('ms-' + s).classList.toggle('hidden', s !== sub); });
+  if (sub === 'list') loadMembers();
+  if (sub === 'add') { if (!$('n-rows').children.length) clearNewRows(); if (!state.members.length) loadMembers(); }
+  if (sub === 'optout') loadMatrix();
+}
+
+/* --- 새 냥이 등록: 줄마다 닉네임/직업/전투력/권한 입력란 --- */
+function newRowHtml(p) {
+  p = p || {};
+  var iAmMaster = state.user.role === '길마';
+  return '<tr>' +
+    '<td><input data-n="nickname" value="' + esc(p.nickname || '') + '" placeholder="게임 닉네임" style="min-width:150px"></td>' +
+    '<td><select data-n="job" style="min-width:120px">' + jobOptions(p.job, '미설정') + '</select></td>' +
+    '<td class="num"><input data-n="power" inputmode="numeric" value="' + esc(p.power || '') + '" placeholder="예: 52,000" style="width:110px;text-align:right"></td>' +
+    '<td><select data-n="role" style="min-width:100px"' + (iAmMaster ? '' : ' disabled title="권한은 길마만 정할 수 있다냥"') + '>' +
+      ROLES.map(function (r) { return '<option' + (r === (p.role || '길드원') ? ' selected' : '') + '>' + r + '</option>'; }).join('') + '</select></td>' +
+    '<td><button class="sm" title="이 줄 지우기" onclick="removeNewRow(this)">✕</button></td></tr>';
+}
+function addNewRow(p) { $('n-rows').insertAdjacentHTML('beforeend', newRowHtml(p)); }
+function removeNewRow(btn) {
+  btn.closest('tr').remove();
+  if (!$('n-rows').children.length) addNewRow();
+}
+function clearNewRows() { $('n-rows').innerHTML = ''; for (var k = 0; k < 3; k++) addNewRow(); }
+function readNewRows() {
+  return Array.prototype.map.call($('n-rows').querySelectorAll('tr'), function (tr) {
+    var o = {};
+    tr.querySelectorAll('[data-n]').forEach(function (el) { o[el.getAttribute('data-n')] = el.value.trim(); });
+    return o;
+  }).filter(function (o) { return o.nickname; });
+}
+// "닉네임 [직업] [전투력]" 한 줄 해석 (탭/쉼표/공백 구분, 45,000 같은 천단위 쉼표는 유지)
+function parseMemberLine(line) {
+  var parts = line.trim().split(/\t+|\s+|,(?!\d{3}(?!\d))/).filter(Boolean);
+  if (!parts.length) return null;
+  var job = '', power = '';
+  var isNum = function (s) { return /^[\d,]+$/.test(s); };
+  if (parts.length > 1 && isNum(parts[parts.length - 1])) power = parts.pop();
+  if (parts.length > 1 && JOBS.indexOf(parts[parts.length - 1]) >= 0) job = parts.pop();
+  if (parts.length > 1 && !power && isNum(parts[parts.length - 1])) power = parts.pop();
+  return { nickname: parts.join(' '), job: job, power: power };
+}
+$('n-rows').addEventListener('paste', function (e) {
+  if (e.target.getAttribute('data-n') !== 'nickname') return;
+  var text = (e.clipboardData || window.clipboardData).getData('text');
+  if (!/[\n\t]/.test(text.trim())) return; // 한 칸짜리 붙여넣기는 그대로
+  e.preventDefault();
+  var rows = text.split(/\r?\n/).map(parseMemberLine).filter(Boolean);
+  var tr = e.target.closest('tr');
+  // 붙여넣은 줄 아래에 있던 빈 줄은 정리
+  while (tr.nextElementSibling && !tr.nextElementSibling.querySelector('[data-n="nickname"]').value.trim()) tr.nextElementSibling.remove();
+  rows.forEach(function (p, k) {
+    if (k === 0) {
+      tr.querySelector('[data-n="nickname"]').value = p.nickname;
+      if (p.job) tr.querySelector('[data-n="job"]').value = p.job;
+      if (p.power) tr.querySelector('[data-n="power"]').value = p.power;
+    } else {
+      tr.insertAdjacentHTML('afterend', newRowHtml(p));
+      tr = tr.nextElementSibling;
+    }
+  });
+  toast(rows.length + '줄로 나눴다냥');
+});
+function addMembers() {
+  var list = readNewRows();
+  if (!list.length) return toast('닉네임을 적어라냥', true);
+  var seen = {}, dup = [], exist = [];
+  list.forEach(function (p) {
+    if (seen[p.nickname]) dup.push(p.nickname); seen[p.nickname] = 1;
+    if (state.members.some(function (m) { return m.nickname === p.nickname; })) exist.push(p.nickname);
+  });
+  if (dup.length) return toast('같은 닉네임이 두 번 있다냥: ' + dup.join(', '), true);
+  var bad = list.filter(function (p) { return p.power && !/^[\d,\s]+$/.test(p.power); });
+  if (bad.length) return toast(bad[0].nickname + ': 전투력은 숫자로 적어라냥', true);
+  if (exist.length && !confirm('이미 등록된 냥이는 건너뛴다냥: ' + exist.join(', ') + '\n나머지를 등록할까?')) return;
+  $('n-save').disabled = true;
+  call('addMembers', { members: list }).then(function (r) {
+    toast(r.added.length + '명 등록했다냥' + (r.skipped.length ? ', 중복 ' + r.skipped.length + '명 건너뜀' : ''));
+    clearNewRows();
+    return loadMembers();
+  }).catch(function () {}).then(function () { $('n-save').disabled = false; });
+}
+
+/* --- 길드원 목록: 직업/전투력/권한을 고쳐 두었다가 한꺼번에 저장 --- */
+var MEM_FIELDS = ['job', 'power', 'role'];
+function memOrig(m, f) { return f === 'power' ? (m.power ? String(m.power) : '') : String(m[f] || (f === 'role' ? '길드원' : '')); }
+function memVal(m, f) { var e = state.memEdits[m.nickname]; return e && e[f] !== undefined ? e[f] : memOrig(m, f); }
+function memNorm(f, v) { v = String(v == null ? '' : v).trim(); return f === 'power' ? v.replace(/[,\s]/g, '').replace(/^0+(?=\d)/, '') : v; }
+function memChanged(m, f) { return memNorm(f, memVal(m, f)) !== memNorm(f, memOrig(m, f)); }
+function memberChanges() {
+  var out = [];
+  state.members.forEach(function (m) {
+    if (!state.memEdits[m.nickname]) return;
+    var c = { nickname: m.nickname }, n = 0;
+    MEM_FIELDS.forEach(function (f) { if (memChanged(m, f)) { c[f] = memNorm(f, memVal(m, f)); n++; } });
+    if (n) out.push(c);
+  });
+  return out;
 }
 function renderMembers() {
   $('m-count').textContent = '(' + state.members.length + ')';
+  var iAmMaster = state.user.role === '길마';
   $('m-list').innerHTML = state.members.map(function (m, idx) {
     var isMe = m.nickname === state.user.nickname;
-    var iAmMaster = state.user.role === '길마';
     var canManage = !isMe && (iAmMaster || m.role !== '길마'); // 부길마는 길마 계정을 못 건드림
+    var canEdit = isMe || canManage;
+    var cls = function (f) { return memChanged(m, f) ? ' class="chg"' : ''; };
+    var dis = canEdit ? '' : ' disabled title="길마 계정은 길마만 고칠 수 있다냥"';
+    var rv = memVal(m, 'role');
     var roleCell = iAmMaster && !isMe
-      ? '<select style="min-width:105px;padding:5px 8px" onchange="setMemberRole(' + idx + ', this)">' + ROLES.map(function (r) {
-          return '<option' + (r === m.role ? ' selected' : '') + '>' + r + '</option>'; }).join('') + '</select>'
+      ? '<select data-m="' + idx + '" data-f="role"' + cls('role') + ' style="min-width:105px">' + ROLES.map(function (r) {
+          return '<option' + (r === rv ? ' selected' : '') + '>' + r + '</option>'; }).join('') + '</select>'
       : roleBadge(m.role);
-    return '<tr><td>' + esc(m.nickname) + (isMe ? ' <span class="muted">(나)</span>' : '') + '</td>' +
-      '<td><select style="min-width:120px;padding:5px 8px" onchange="setMemberJob(' + idx + ', this.value)">' + jobOptions(m.job, '미설정') + '</select></td>' +
-      '<td class="num"><input type="text" inputmode="numeric" value="' + (m.power || '') + '" placeholder="-" style="width:100px;padding:5px 8px;text-align:right" onchange="setMemberPower(' + idx + ', this)"></td>' +
+    return '<tr><td><b>' + esc(m.nickname) + '</b>' + (isMe ? ' <span class="muted">(나)</span>' : '') + '</td>' +
+      '<td><select data-m="' + idx + '" data-f="job"' + cls('job') + dis + ' style="min-width:120px">' + jobOptions(memVal(m, 'job'), '미설정') + '</select></td>' +
+      '<td class="num"><input data-m="' + idx + '" data-f="power"' + cls('power') + dis + ' inputmode="numeric" value="' + esc(memVal(m, 'power')) + '" placeholder="-" style="width:100px;text-align:right"></td>' +
       '<td>' + roleCell + '</td>' +
       '<td>' + (m.hasPassword ? '설정됨' : '<span class="muted">미설정</span>') + '</td>' +
       '<td class="muted">' + fmtDate(m.lastLogin) + '</td>' +
       '<td class="num"><div class="row" style="justify-content:flex-end">' +
-        '<button class="sm" onclick="openMemberOptouts(state.members[' + idx + '].nickname)">안 받을 템</button>' +
+        '<button class="sm" onclick="openMemberOptouts(' + idx + ')">안 받을 템</button>' +
         (!canManage ? '' :
           '<button class="sm" onclick="memberAct(' + idx + ',\'reset\')">비번 초기화</button>' +
           '<button class="sm no" onclick="memberAct(' + idx + ',\'delete\')">삭제</button>') +
       '</div></td></tr>';
   }).join('');
+  updateMemberBar();
+}
+$('m-list').addEventListener('input', onMemberEdit);
+$('m-list').addEventListener('change', onMemberEdit);
+function onMemberEdit(e) {
+  var idx = e.target.getAttribute && e.target.getAttribute('data-m'), f = e.target.getAttribute('data-f');
+  var m = idx != null && state.members[idx]; if (!m || !f) return;
+  (state.memEdits[m.nickname] = state.memEdits[m.nickname] || {})[f] = e.target.value;
+  e.target.classList.toggle('chg', memChanged(m, f));
+  updateMemberBar();
+}
+function updateMemberBar() {
+  var n = memberChanges().length;
+  $('m-changes').textContent = n ? n + '명 고쳤다냥 (저장 안 함)' : '고친 게 없다냥';
+  $('m-bar').classList.toggle('idle', !n);
+}
+function resetMemberEdits() { state.memEdits = {}; renderMembers(); }
+function saveMemberEdits() {
+  var changes = memberChanges();
+  if (!changes.length) return toast('고친 게 없다냥', true);
+  var bad = changes.filter(function (c) { return c.power !== undefined && c.power !== '' && !/^\d+$/.test(c.power); });
+  if (bad.length) return toast(bad[0].nickname + ': 전투력은 숫자로 적어라냥', true);
+  var roles = changes.filter(function (c) { return c.role !== undefined; });
+  if (roles.length && !confirm('권한을 바꾼다냥:\n' + roles.map(function (c) { return c.nickname + ' → ' + c.role; }).join('\n') + '\n저장할까?')) return;
+  $('m-save').disabled = true;
+  call('saveMembers', { changes: changes }).then(function () {
+    toast(changes.length + '명 저장했다냥!');
+    var mine = changes.filter(function (c) { return c.nickname === state.user.nickname; })[0];
+    if (mine) {
+      if (mine.job !== undefined) state.user.job = mine.job;
+      if (mine.power !== undefined) state.user.power = Number(mine.power) || 0;
+      renderMyJob();
+    }
+    return loadMembers();
+  }).catch(function () {}).then(function () { $('m-save').disabled = false; });
 }
 function memberAct(idx, kind) {
   var m = state.members[idx]; if (!m) return;
@@ -1012,76 +1243,207 @@ function memberAct(idx, kind) {
     if (!confirm(m.nickname + ' 님을 삭제할까요?')) return;
     p = call('deleteMember', { nickname: m.nickname });
   }
-  p.then(function () { toast('처리했습니다.'); loadMembers(); }).catch(function () {});
-}
-function addMembers() {
-  call('addMembers', { nicknames: $('m-names').value }).then(function (r) {
-    $('m-names').value = '';
-    toast(r.added.length + '명 등록' + (r.skipped.length ? ', 중복 ' + r.skipped.length + '명 건너뜀' : ''));
-    loadMembers();
+  p.then(function () {
+    toast('처리했습니다.');
+    // 다른 냥이 줄에 고쳐둔 값은 유지
+    var keep = state.memEdits;
+    return call('listMembers').then(function (list) { state.members = list; state.memEdits = keep; renderMembers(); });
   }).catch(function () {});
 }
 
-function setMemberRole(idx, sel) {
-  var m = state.members[idx]; if (!m) return;
-  var role = sel.value;
-  if (!confirm(m.nickname + ' 님 권한을 ' + role + '(으)로 바꿀까요?')) { sel.value = m.role; return; }
-  call('setRole', { nickname: m.nickname, role: role }).then(function () { m.role = role; toast(m.nickname + ' 님은 이제 ' + role + '다냥'); renderMembers(); })
-    .catch(function () { sel.value = m.role; });
+/* ---------- 참여 제외: 받기/안 받기 토글 → 한꺼번에 저장 (내 정보 / 길마용 팝업) ---------- */
+// optUI[scope] = { nickname, items(memberItems 응답), edits: { itemId: true(안 받기)/false(받기) } }
+var optUI = { me: null, modal: null };
+var OPT_BOX = { me: 'my-optouts', modal: 'modal-opt' };
+function optOff(i, u) { return u.edits[i.id] !== undefined ? u.edits[i.id] : i.optedOut; }
+function optChanges(scope) {
+  var u = optUI[scope]; if (!u) return [];
+  return u.items.filter(function (i) { return u.edits[i.id] !== undefined && u.edits[i.id] !== i.optedOut; })
+    .map(function (i) { return { nickname: u.nickname, itemId: i.id, on: u.edits[i.id] }; });
 }
-function setMemberPower(idx, input) {
-  var m = state.members[idx]; if (!m) return;
-  call('setPower', { nickname: m.nickname, power: input.value }).then(function (v) {
-    m.power = v; input.value = v || ''; toast(m.nickname + ' 님 전투력: ' + fmtPower(v));
-    if (m.nickname === state.user.nickname) { state.user.power = v; renderMyJob(); }
-  }).catch(function () { input.value = m.power || ''; });
-}
-
-function setMemberJob(idx, job) {
-  var m = state.members[idx]; if (!m) return;
-  call('setJob', { nickname: m.nickname, job: job }).then(function () {
-    m.job = job; toast(m.nickname + ' 님 직업: ' + (job || '미설정'));
-    if (m.nickname === state.user.nickname) { state.user.job = job; renderMyJob(); }
-  }).catch(function () { loadMembers(); });
-}
-
-/* ---------- 참여 제외 (내 정보 / 길마용 팝업) ---------- */
-// items: memberItems 응답. 내 직업으로 받을 수 있는 아이템 + 이미 제외한 아이템만 보여줌
-function optoutListHtml(items, nickname) {
-  var list = sortItems(items.filter(function (i) { return i.jobOk || i.optedOut; }));
-  if (!list.length) return emptyState('받을 수 있는 아이템이 없다냥', 'gray');
-  var html = '', last = null, forModal = nickname !== state.user.nickname ? 1 : 0;
+// 직업으로 받을 수 있는 아이템 + 이미 제외한 아이템만 보여줌
+function renderOptouts(scope) {
+  var u = optUI[scope], box = $(OPT_BOX[scope]); if (!u || !box) return;
+  var list = sortItems(u.items.filter(function (i) { return i.jobOk || i.optedOut; }));
+  if (!list.length) { box.innerHTML = emptyState('받을 수 있는 아이템이 없다냥', 'gray'); return; }
+  var html = '', last = null;
   list.forEach(function (i) {
     var cat = i.category || '분류 없음';
     if (cat !== last) { html += '<div class="rot-group">' + esc(cat) + '</div>'; last = cat; }
-    html += '<div class="opt-row' + (i.optedOut ? ' on' : '') + '"><span class="nm">' + esc(i.name) + '</span>' +
+    var off = optOff(i, u), chg = off !== i.optedOut;
+    html += '<div class="opt-row' + (off ? ' on' : '') + (chg ? ' chg' : '') + '"><span class="nm">' + esc(i.name) + '</span>' +
       (i.won ? '<span class="badge join">이번 회차 받음</span>' : '') +
-      (i.optedOut && i.optedBy && i.optedBy !== nickname ? '<span class="muted">' + esc(i.optedBy) + ' 지정</span>' : '') +
-      '<button class="sm ' + (i.optedOut ? 'primary' : '') + '" onclick="toggleOptout(\'' + i.id + '\', ' + !i.optedOut + ', ' + forModal + ')">' +
-      (i.optedOut ? '제외 중 · 취소' : '안 받기') + '</button></div>';
+      (i.optedOut && i.optedBy && i.optedBy !== u.nickname ? '<span class="muted">' + esc(i.optedBy) + ' 지정</span>' : '') +
+      '<button class="tgl' + (off ? ' off' : '') + '" onclick="flipOpt(\'' + scope + '\', \'' + i.id + '\')">' + (off ? '🙅 안 받기' : '🙆 받기') + '</button></div>';
   });
-  return html;
+  var n = optChanges(scope).length;
+  html += '<div class="savebar' + (n ? '' : ' idle') + '"><span>' + (n ? n + '개 바꿨다냥 (저장 안 함)' : '눌러서 받기/안 받기를 바꾸라냥') + '</span>' +
+    '<div class="row"><button class="sm" onclick="resetOpt(\'' + scope + '\')">되돌리기</button>' +
+    '<button class="sm primary" onclick="saveOpt(\'' + scope + '\', this)">한꺼번에 저장</button></div></div>';
+  box.innerHTML = html;
+}
+function flipOpt(scope, itemId) {
+  var u = optUI[scope]; if (!u) return;
+  var i = u.items.filter(function (x) { return x.id === itemId; })[0]; if (!i) return;
+  u.edits[itemId] = !optOff(i, u);
+  renderOptouts(scope);
+}
+function resetOpt(scope) { if (optUI[scope]) { optUI[scope].edits = {}; renderOptouts(scope); } }
+function saveOpt(scope, btn) {
+  var changes = optChanges(scope);
+  if (!changes.length) return toast('바꾼 게 없다냥', true);
+  btn.disabled = true;
+  call('setOptouts', { changes: changes }).then(function (r) {
+    toast('저장했다냥! 안 받기 ' + r.added + '개 · 받기로 ' + r.removed + '개');
+    if (scope === 'me') { loadMyOptouts(); loadAuctions(true); } else openMemberOptouts(optUI.modal.nickname);
+  }).catch(function () { btn.disabled = false; });
 }
 function loadMyOptouts() {
-  return call('myItems', {}, true).then(function (items) { $('my-optouts').innerHTML = optoutListHtml(items, state.user.nickname); }).catch(function () {});
-}
-function toggleOptout(itemId, on, forModal) {
-  var nickname = forModal ? state.optTarget : state.user.nickname;
-  call('setOptout', { itemId: itemId, on: on, nickname: nickname }).then(function () {
-    toast(on ? '안 받을 아이템으로 지정했다냥' : '지정을 취소했다냥');
-    if (forModal) openMemberOptouts(nickname); else loadMyOptouts();
+  return call('myItems', {}, true).then(function (items) {
+    optUI.me = { nickname: state.user.nickname, items: items, edits: {} };
+    renderOptouts('me');
   }).catch(function () {});
 }
-function openMemberOptouts(nickname) {
-  state.optTarget = nickname;
+function openMemberOptouts(idxOrName) {
+  var nickname = typeof idxOrName === 'number' ? (state.members[idxOrName] || {}).nickname : idxOrName;
+  if (!nickname) return;
   call('memberItems', { nickname: nickname }).then(function (items) {
     var m = state.members.filter(function (x) { return x.nickname === nickname; })[0] || {};
+    optUI.modal = { nickname: nickname, items: items, edits: {} };
     $('modal-body').innerHTML = '<h2 style="margin-right:60px">' + esc(nickname) + ' 님이 안 받을 아이템</h2>' +
-      '<p class="muted" style="margin-top:-6px">' + esc(m.job || '직업 미설정') + ' · 제외한 아이템은 입찰 불가, 순번에서도 빠진다냥</p>' +
-      optoutListHtml(items, nickname);
+      '<p class="muted" style="margin-top:-6px">' + esc(m.job || '직업 미설정') + ' · 안 받기로 한 아이템은 입찰 불가, 순번에서도 빠진다냥</p>' +
+      '<div id="modal-opt"></div>';
+    renderOptouts('modal');
     $('modal').classList.remove('hidden');
   }).catch(function () {});
 }
+
+/* ---------- 안 받을 템 지정: 닉네임 × 아이템 표 (길마/부길마) ---------- */
+// state.mx = { items, members, optouts:{닉네임:{아이템ID:지정자}} }, state.mxEdits = { 닉네임: { 아이템ID: true/false } }, state.mxMemo = { 닉네임: 메모 }
+function loadMatrix() {
+  if (mxDirty() && !confirm('저장 안 한 변경이 있다냥. 버리고 새로 불러올까?')) return;
+  return call('optoutMatrix').then(function (d) {
+    d.items = sortItems(d.items);
+    state.mx = d; state.mxEdits = {}; state.mxMemo = {};
+    renderMatrix();
+  }).catch(function () {});
+}
+function mxOrig(nick, itemId) { return !!((state.mx.optouts[nick] || {})[itemId]); }
+function mxOff(nick, itemId) { var e = state.mxEdits[nick]; return e && e[itemId] !== undefined ? e[itemId] : mxOrig(nick, itemId); }
+function mxMemoOrig(m) { return m.memo || ''; }
+function mxChanges() {
+  var optouts = [], memos = [];
+  if (!state.mx) return { optouts: optouts, memos: memos };
+  Object.keys(state.mxEdits).forEach(function (nick) {
+    var e = state.mxEdits[nick];
+    Object.keys(e).forEach(function (id) { if (e[id] !== mxOrig(nick, id)) optouts.push({ nickname: nick, itemId: id, on: e[id] }); });
+  });
+  state.mx.members.forEach(function (m) {
+    var v = state.mxMemo[m.nickname];
+    if (v !== undefined && v.trim() !== mxMemoOrig(m)) memos.push({ nickname: m.nickname, memo: v.trim() });
+  });
+  return { optouts: optouts, memos: memos };
+}
+function mxDirty() { var c = mxChanges(); return c.optouts.length + c.memos.length; }
+function mxLists() {
+  var qi = $('x-item').value.trim().toLowerCase(), qn = $('x-nick').value.trim().toLowerCase();
+  return {
+    items: state.mx.items.filter(function (i) { return !qi || (i.name + ' ' + (i.category || '') + ' ' + (i.job || '공용')).toLowerCase().indexOf(qi) >= 0; }),
+    members: state.mx.members.filter(function (m) { return !qn || (m.nickname + ' ' + (m.job || '')).toLowerCase().indexOf(qn) >= 0; })
+  };
+}
+$('x-item').addEventListener('input', function () { if (state.mx) renderMatrix(); });
+$('x-nick').addEventListener('input', function () { if (state.mx) renderMatrix(); });
+function renderMatrix() {
+  var L = mxLists();
+  state.mxView = L;
+  if (!L.items.length || !L.members.length) {
+    $('x-table').innerHTML = '<tr><td>' + emptyState(!state.mx.items.length ? '창고에 아이템이 없다냥' : '보여줄 칸이 없다냥', 'gray') + '</td></tr>';
+    updateMatrixBar(); return;
+  }
+  // 1행: 분류 묶음, 2행: 아이템 이름(누르면 열 전체 바꾸기)
+  var groups = [], last = null;
+  L.items.forEach(function (i) {
+    var c = i.category || '분류 없음';
+    if (c !== last) { groups.push({ name: c, n: 0 }); last = c; }
+    groups[groups.length - 1].n++;
+  });
+  var head1 = '<tr><th class="nk" rowspan="2">닉네임</th><th rowspan="2" style="vertical-align:bottom">메모</th>' +
+    groups.map(function (g) { return '<th class="cg" colspan="' + g.n + '">' + esc(g.name) + '</th>'; }).join('') + '</tr>';
+  var head2 = '<tr>' + L.items.map(function (i, k) {
+    return '<th class="it" data-col="' + k + '" title="' + esc(i.name) + ' [' + esc(i.job || '공용') + '] — 눌러서 열 전체 바꾸기"><span>' + esc(i.name) + '</span></th>';
+  }).join('') + '</tr>';
+  var body = L.members.map(function (m, r) {
+    var memo = state.mxMemo[m.nickname] !== undefined ? state.mxMemo[m.nickname] : mxMemoOrig(m);
+    var memoChg = memo.trim() !== mxMemoOrig(m);
+    return '<tr><th class="nk">' + esc(m.nickname) + '<small>' + esc(m.job || '직업 미설정') + '</small></th>' +
+      '<td class="memo"><input data-memo="' + r + '" value="' + esc(memo) + '" placeholder="메모"' + (memoChg ? ' class="chg"' : '') + '></td>' +
+      L.items.map(function (i, k) {
+        if (i.job && i.job !== m.job && !mxOrig(m.nickname, i.id)) return '<td class="na" title="' + esc(i.job) + ' 전용">·</td>';
+        var off = mxOff(m.nickname, i.id), chg = off !== mxOrig(m.nickname, i.id);
+        return '<td class="c' + (off ? ' off' : '') + (chg ? ' chg' : '') + '" data-r="' + r + '" data-k="' + k + '" title="' + esc(m.nickname + ' · ' + i.name) + '">' + (off ? '✕' : '○') + '</td>';
+      }).join('') + '</tr>';
+  }).join('');
+  $('x-table').innerHTML = '<thead>' + head1 + head2 + '</thead><tbody>' + body + '</tbody>';
+  updateMatrixBar();
+}
+function mxCanToggle(m, i) { return !i.job || i.job === m.job || mxOrig(m.nickname, i.id); }
+function mxSet(m, i, off) { (state.mxEdits[m.nickname] = state.mxEdits[m.nickname] || {})[i.id] = off; }
+$('x-table').addEventListener('click', function (e) {
+  var L = state.mxView; if (!L) return;
+  var td = e.target.closest('td.c'), th = e.target.closest('th.it');
+  if (td) {
+    var m = L.members[td.getAttribute('data-r')], i = L.items[td.getAttribute('data-k')];
+    var off = !mxOff(m.nickname, i.id);
+    mxSet(m, i, off);
+    var chg = off !== mxOrig(m.nickname, i.id);
+    td.className = 'c' + (off ? ' off' : '') + (chg ? ' chg' : '');
+    td.textContent = off ? '✕' : '○';
+    updateMatrixBar();
+  } else if (th) {
+    // 열 전체: 보이는 냥이 중 하나라도 '받기'면 모두 '안 받기', 아니면 모두 '받기'
+    var it = L.items[th.getAttribute('data-col')];
+    var who = L.members.filter(function (m) { return mxCanToggle(m, it); });
+    var anyOn = who.some(function (m) { return !mxOff(m.nickname, it.id); });
+    who.forEach(function (m) { mxSet(m, it, anyOn); });
+    renderMatrix();
+  }
+});
+$('x-table').addEventListener('input', function (e) {
+  var r = e.target.getAttribute && e.target.getAttribute('data-memo'); if (r == null) return;
+  var m = state.mxView.members[r];
+  state.mxMemo[m.nickname] = e.target.value;
+  e.target.classList.toggle('chg', e.target.value.trim() !== mxMemoOrig(m));
+  updateMatrixBar();
+});
+function updateMatrixBar() {
+  var c = mxChanges(), n = c.optouts.length, k = c.memos.length;
+  $('x-changes').textContent = n || k ? '칸 ' + n + '개' + (k ? ' · 메모 ' + k + '개' : '') + ' 바꿨다냥 (저장 안 함)' : '고친 게 없다냥';
+  $('x-bar').classList.toggle('idle', !(n || k));
+}
+function resetMatrix() { state.mxEdits = {}; state.mxMemo = {}; renderMatrix(); }
+function saveMatrix() {
+  var c = mxChanges();
+  if (!c.optouts.length && !c.memos.length) return toast('고친 게 없다냥', true);
+  $('x-save').disabled = true;
+  call('saveOptoutMatrix', c).then(function (r) {
+    toast('저장했다냥!' + (r.optouts ? ' 안 받기 ' + r.optouts.added + '개 · 받기로 ' + r.optouts.removed + '개' : '') + (r.memos ? ' · 메모 ' + r.memos + '개' : ''));
+    state.mxEdits = {}; state.mxMemo = {};
+    return loadMatrix();
+  }).catch(function () {}).then(function () { $('x-save').disabled = false; });
+}
+
+/* ---------- 저장 안 한 변경 확인 ---------- */
+function pendingEdits() {
+  return (state.items.length ? itemsDirty() : 0) + memberChanges().length + mxDirty() + optChanges('me').length + optChanges('modal').length;
+}
+function confirmLeave() { return !pendingEdits() || confirm('저장 안 한 변경이 있다냥. 버리고 넘어갈까?'); }
+function dropEdits() {
+  state.itemEdits = {}; state.itemDel = {}; state.memEdits = {}; state.mxEdits = {}; state.mxMemo = {};
+  if (optUI.me) optUI.me.edits = {};
+  if (optUI.modal) optUI.modal.edits = {};
+}
+window.addEventListener('beforeunload', function (e) { if (state.user && pendingEdits()) { e.preventDefault(); e.returnValue = ''; } });
 
 /* ---------- 낙찰 순번 (길마/부길마) ---------- */
 state.rotation = [];
@@ -1166,7 +1528,6 @@ function changePassword() {
 /* ---------- 시작 ---------- */
 $('i-job').innerHTML = '<option value="공용">공용 (누구나)</option>' + JOBS.map(function (j) { return '<option>' + j + '</option>'; }).join('');
 $('i-name').addEventListener('input', function () {
-  if ($('i-id').value) return; // 수정 중엔 자동 변경 안 함
   var n = $('i-name').value, hit = JOBS.filter(function (j) { return n.indexOf(j) >= 0; })[0];
   $('i-job').value = hit || '공용';
 });
