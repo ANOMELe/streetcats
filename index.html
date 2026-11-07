@@ -31,7 +31,7 @@
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='%233b2a20' fill-opacity='.06'%3E%3Cg transform='translate(40 48) rotate(-18)'%3E%3Cellipse cx='0' cy='8' rx='11' ry='9'/%3E%3Ccircle cx='-11' cy='-6' r='4.5'/%3E%3Ccircle cx='-4' cy='-12' r='4.5'/%3E%3Ccircle cx='4' cy='-12' r='4.5'/%3E%3Ccircle cx='11' cy='-6' r='4.5'/%3E%3C/g%3E%3Cg transform='translate(130 128) rotate(22)'%3E%3Cellipse cx='0' cy='8' rx='11' ry='9'/%3E%3Ccircle cx='-11' cy='-6' r='4.5'/%3E%3Ccircle cx='-4' cy='-12' r='4.5'/%3E%3Ccircle cx='4' cy='-12' r='4.5'/%3E%3Ccircle cx='11' cy='-6' r='4.5'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
       repeating-linear-gradient(-32deg, rgba(255,255,255,.22) 0 36px, rgba(255,255,255,0) 36px 72px);
   }
-  .wrap { position: relative; z-index: 1; max-width: 940px; margin: 0 auto; padding: 18px 16px 60px; }
+  .wrap { position: relative; z-index: 1; max-width: 1360px; margin: 0 auto; padding: 18px 16px 60px; }
   h1, h2, h3, .hand { font-family: var(--hand); font-weight: 400; letter-spacing: .2px; }
   h1 { font-size: 24px; margin: 0; }
   h2 { font-size: 20px; margin: 0 0 12px; }
@@ -155,6 +155,17 @@
   .rot-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .rot-head .name { font: 19px var(--hand); }
   .rot-group { font: 18px var(--hand); color: var(--accent); margin: 14px 0 8px; }
+  .pager { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 14px; }
+  .pager button { min-width: 38px; }
+  .rsel { width: auto; padding: 4px 8px; font-size: 13px; border-radius: 10px; }
+  .catpill.sm { padding: 0 9px; font: 12px var(--hand); border-width: 2px; box-shadow: none; white-space: nowrap; }
+.catpill { display: inline-block; padding: 2px 14px; border: 2.5px solid var(--ink); border-radius: 99px; color: var(--ink); box-shadow: 0 2px 0 var(--ink); }
+  .roundbox { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 12px;
+    border: 2.5px solid var(--ink); border-radius: 14px; background: #fff; min-width: 76px; }
+  .roundbox b { font: 20px var(--hand); }
+  table.rec { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.rec td, table.rec th { padding: 4px 8px; border-bottom: 1.5px dashed var(--line); text-align: left; }
+  table.rec td.num, table.rec th.num { text-align: right; }
   .opt-row { display: flex; align-items: center; gap: 8px; padding: 8px 2px; border-bottom: 2px dashed var(--line); }
   .opt-row .nm { flex: 1; min-width: 0; font-weight: 800; }
   .opt-row.on .nm { color: var(--muted); text-decoration: line-through; }
@@ -225,9 +236,10 @@
   .mx th, .mx td { padding: 4px; border-bottom: 1.5px dashed var(--line); border-right: 1.5px dashed var(--line); text-align: center; white-space: nowrap; border-radius: 0 !important; }
   .mx thead th { position: sticky; top: 0; z-index: 2; background: var(--panel2); vertical-align: bottom; border-bottom: 2.5px solid var(--ink); }
   .mx th.it { cursor: pointer; padding: 6px 3px; }
-  .mx th.it span { display: inline-block; writing-mode: vertical-rl; max-height: 9.5em; overflow: hidden; text-overflow: ellipsis; color: var(--ink); font-size: 12px; }
-  .mx th.it:hover { background: #ffe6b0; }
-  .mx th.cg { height: 26px; font: 12px var(--hand); color: var(--accent); }
+  .mx th.it span { display: inline-block; writing-mode: vertical-rl; max-height: 11em; white-space: normal; word-break: keep-all; line-height: 1.25; color: var(--ink); font-size: 12px; font-weight: 700; text-align: left; }
+  .mx th.it:hover { filter: brightness(.94); }
+  .mx th.gs { border-left: 2.5px solid var(--ink); }
+  .mx th.cg { height: 26px; font: 13px var(--hand); color: var(--ink); }
   .mx thead tr + tr th { top: 26px; }
   .mx .nk { position: sticky; left: 0; z-index: 1; background: var(--panel); text-align: left; padding: 4px 8px; font-weight: 800; }
   .mx thead .nk { z-index: 3; background: var(--panel2); }
@@ -239,6 +251,10 @@
   .mx td.c:hover { filter: brightness(.95); background-color: #fff3dc; }
   .mx td.na { color: #d6c6ad; background: #f6f0e4; }
   @media (prefers-reduced-motion: reduce) { .deco.leaf, .peek svg, .hero .cat svg { animation: none; } }
+  /* 넓은 화면: 카드 목록을 여러 열로 */
+  @media (min-width: 1100px) {
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); column-gap: 20px; align-items: start; }
+  }
   @media (max-width: 560px) {
     .hero .cat { width: 62px; }
     .hero h2 { font-size: 21px; }
@@ -315,7 +331,7 @@
           <button class="sm primary" onclick="setTab('me')">내 정보로 가기</button>
         </div>
       </div>
-      <div id="active-list"></div>
+      <div id="active-list" class="cards-grid"></div>
       <details class="card"><summary>지난 경매 보기</summary><div id="closed-list" style="margin-top:12px"></div></details>
     </div>
 
@@ -339,28 +355,36 @@
           <div class="grow"><label>경매 가격 (자동 입력, 바꿔도 된다냥)</label><input id="a-price" type="number" min="0" step="1"></div>
           <div class="grow"><label>메모 (선택)</label><input id="a-memo" placeholder="예: 1넴 드랍"></div>
         </div>
-        <button class="primary full big" id="a-submit" onclick="createAuction()">경매 열기냥!</button>
+        <div id="a-who" class="hidden" style="display:grid;gap:8px;margin-top:12px"></div>
+        <div class="row" style="margin-top:14px;align-items:stretch">
+          <button class="primary big grow" id="a-submit" onclick="createAuction()">경매 열기냥!</button>
+          <div class="roundbox"><span class="muted">이번 회차</span><b id="a-round">-</b></div>
+          <button id="a-next" onclick="nextRound()" disabled>차수 넘기기</button>
+        </div>
       </div>
       <div class="row" style="justify-content:space-between;margin-bottom:12px">
-        <h2 style="margin:0">경매 목록</h2>
-        <button class="sm" onclick="loadAuctions()">새로고침</button>
+        <h2 style="margin:0">진행중 경매</h2>
+        <button class="sm" onclick="loadAuctions(); loadRecords()">새로고침</button>
       </div>
-      <div id="manage-list"></div>
+      <div id="manage-list" class="cards-grid"></div>
+      <details class="card" style="margin-top:12px"><summary>마감된 경매 (다시 진행 · 삭제)</summary><div id="manage-closed" class="cards-grid" style="margin-top:12px"></div></details>
     </div>
 
-    <!-- 길마: 낙찰 순번 -->
+    <!-- 길마: 낙찰 기록 -->
     <div id="t-rotation" class="tab hidden">
       <div class="hero">
         <div class="cat" data-cat="black" data-face="happy"></div>
-        <div><h2>누가 받을 차례냥?</h2><p>아이템마다 이번 회차에 받은 냥이·남은 냥이·안 받는 냥이를 보여준다냥. 남은 냥이가 다 받으면 자동으로 다음 회차!</p></div>
+        <div><h2>낙찰 기록이다냥</h2><p>아이템마다 이번 회차 진행 상태와 지난 회차 결과를 가격과 함께 보여준다냥.</p></div>
         <div class="spacer"></div>
-        <button class="sm" onclick="loadRotation()">새로고침</button>
+        <button class="sm" onclick="loadRecords()">새로고침</button>
       </div>
-      <div class="card" style="padding:12px 16px">
-        <div class="row">
-          <input id="r-filter" class="grow" placeholder="아이템·직업·닉네임으로 찾기">
-          <label style="margin:0;display:flex;align-items:center;gap:6px;color:var(--ink)"><input type="checkbox" id="r-mine" style="width:auto"> 내 직업만</label>
-        </div>
+      <div class="subtabs" id="r-filters">
+        <button data-f="all" class="on">전체</button>
+        <button data-f="주무기">주무기</button>
+        <button data-f="보조무기">보조무기</button>
+        <button data-f="공용">공용</button>
+        <button data-f="스킬">스킬</button>
+        <button data-f="recent">최근 경매</button>
       </div>
       <div id="rotation-list"></div>
     </div>
@@ -498,7 +522,7 @@
       </div>
       <div class="card">
         <h2>안 받을 아이템 고르기</h2>
-        <p class="muted" style="margin-top:-6px">눌러서 <b>받기 / 안 받기</b>를 다 고른 뒤 <b>한꺼번에 저장</b>하라냥. 안 받기로 한 아이템은 입찰할 수 없고, 낙찰 순번에서도 빠진다냥. 회차가 초기화돼도 <b>내가 취소할 때까지 유지</b>된다냥.</p>
+        <p class="muted" style="margin-top:-6px">눌러서 <b>받기 / 안 받기</b>를 다 고른 뒤 <b>한꺼번에 저장</b>하라냥. 안 받기로 한 아이템은 입찰할 수 없고, 회차를 넘기는 조건에서도 빠진다냥. 회차가 초기화돼도 <b>내가 취소할 때까지 유지</b>된다냥.</p>
         <div id="my-optouts"></div>
       </div>
     </div>
@@ -703,7 +727,7 @@ function startApp() {
   $('me-role').textContent = state.user.role;
   $('me-role').className = 'badge' + roleClass(state.user.role);
   var tabs = [['auction', '🐾 경매']];
-  if (isMaster) tabs.push(['manage', '📢 경매 열기'], ['rotation', '🔄 낙찰 순번'], ['items', '📦 아이템 창고'], ['members', '🐱 길드 냥이들']);
+  if (isMaster) tabs.push(['manage', '📢 경매 관리'], ['rotation', '📜 낙찰 기록'], ['items', '📦 아이템 창고'], ['members', '🐱 길드 냥이들']);
   tabs.push(['me', '🏠 내 정보']);
   $('tabs').innerHTML = tabs.map(function (t) {
     return '<button data-tab="' + t[0] + '">' + t[1] + '</button>'; }).join('');
@@ -728,10 +752,10 @@ function setTab(tab) {
   document.querySelectorAll('.tab').forEach(function (el) { el.classList.toggle('hidden', el.id !== 't-' + tab); });
   $('tabs').querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === tab); });
   if (tab === 'auction') loadAuctions();
-  if (tab === 'manage') { loadItems(); loadAuctions(); }
+  if (tab === 'manage') { loadItems(); loadAuctions(); loadRecords(); }
   if (tab === 'items') loadItems();
   if (tab === 'members') setMemberSub(state.memberSub || load('guildMemberSub') || 'list', true);
-  if (tab === 'rotation') loadRotation();
+  if (tab === 'rotation') loadRecords();
   if (tab === 'me') loadMyOptouts();
 }
 
@@ -883,6 +907,30 @@ function onItemPick() {
   $('a-cat').textContent = item.category ? '[' + item.category + ']' : '';
   $('a-dbprice').textContent = won(item.price);
   $('a-price').value = item.price;
+  renderPickInfo();
+}
+
+// 고른 아이템의 이번 회차 / 입찰할 수 있는 냥이 (낙찰 기록 데이터 재사용)
+function recordOf(itemId) { return (state.records || []).filter(function (r) { return r.id === itemId; })[0]; }
+function renderPickInfo() {
+  var itemId = $('a-item').value, r = itemId && recordOf(itemId);
+  $('a-next').disabled = !r;
+  $('a-round').textContent = r ? r.round + '회차' : '-';
+  if (!itemId) { $('a-who').classList.add('hidden'); return; }
+  $('a-who').classList.remove('hidden');
+  if (!r) { $('a-who').innerHTML = '<span class="muted">입찰할 수 있는 냥이를 불러오는 중이다냥…</span>'; return; }
+  var won = r.history.filter(function (h) { return h.round === r.round; });
+  $('a-who').innerHTML =
+    '<div><div class="muted" style="margin-bottom:4px">🙋 입찰할 수 있는 냥이 ' + r.remaining.length + '명 (전투력순)' +
+      (r.job ? ' · ' + esc(r.job) + ' 전용' : '') + '</div>' +
+      (r.remaining.length ? chipList(r.remaining, '', true) : '<span class="muted">없다냥. 차수를 넘기면 다시 다 입찰할 수 있다냥.</span>') + '</div>' +
+    (won.length ? '<div><div class="muted" style="margin-bottom:4px">🎁 이번 회차에 받은 냥이 (입찰 불가)</div>' + chipList(won, 'won') + '</div>' : '') +
+    (r.optedOut.length ? '<div><div class="muted" style="margin-bottom:4px">🙅 안 받는 냥이</div>' + chipList(r.optedOut, 'out') + '</div>' : '');
+}
+function nextRound() {
+  var id = $('a-item').value; if (!recordOf(id)) return;
+  $('a-next').disabled = true;
+  advanceRound(id).then(renderPickInfo);
 }
 
 function createAuction() {
@@ -892,17 +940,23 @@ function createAuction() {
   call('createAuction', { itemId: itemId, price: $('a-price').value, memo: $('a-memo').value }).then(function () {
     toast('경매가 활성화되었습니다.');
     $('a-memo').value = ''; $('a-item').value = ''; $('a-price').value = ''; $('a-pricebox').classList.add('hidden');
-    loadAuctions();
+    renderPickInfo();
+    loadAuctions(); loadRecords(true);
   }).catch(function () {}).then(function () { $('a-submit').disabled = false; });
 }
 
 function renderManage() {
-  var list = state.auctions;
-  $('manage-list').innerHTML = list.length ? list.map(function (a) {
+  var active = state.auctions.filter(function (a) { return a.status === '진행중'; });
+  var closed = state.auctions.filter(function (a) { return a.status !== '진행중'; });
+  $('manage-list').innerHTML = active.length ? active.map(manageCard).join('')
+    : '<div class="card">' + emptyState('진행중인 경매가 없다냥', 'siamese') + '</div>';
+  $('manage-closed').innerHTML = closed.length ? closed.map(manageCard).join('') : '<span class="muted">마감된 경매가 없다냥</span>';
+}
+function manageCard(a) {
     var active = a.status === '진행중';
-    // 낙찰자가 없으면 전투력 1순위를 기본 선택
+    // 낙찰자가 없으면 전투력 1순위를 기본 선택. 마감 누르면 고른 낙찰자로 저장
     var pick = a.winner || (a.top ? a.top.nickname : '');
-    var opts = '<option value="">낙찰자 선택</option>' + a.bidders.map(function (b) {
+    var opts = '<option value="">낙찰자 없음 (유찰)</option>' + a.bidders.map(function (b) {
       return '<option value="' + esc(b.nickname) + '"' + (b.nickname === pick ? ' selected' : '') + '>' + esc(b.nickname) +
         ' (' + fmtPower(b.power) + (b.eligible ? '' : ', ' + blockText(b.reason || 'job')) + ')</option>'; }).join('');
     if (a.winner && a.joined.indexOf(a.winner) < 0) opts += '<option selected>' + esc(a.winner) + '</option>';
@@ -916,29 +970,32 @@ function renderManage() {
       topBox(a) +
       (a.declined.length ? '<div><div class="muted" style="margin-bottom:4px">불참 ' + a.declined.length + '명</div>' + nameChips(a.declined, null, a.jobs) + '</div>' : '') +
       '<div class="row">' +
-        '<select class="grow" id="w-' + a.id + '">' + opts + '</select>' +
-        '<button class="sm" onclick="setWinner(\'' + a.id + '\')">낙찰 저장</button>' +
-        (active ? '<button class="sm primary" onclick="setStatus(\'' + a.id + '\', \'마감\')">마감</button>'
-                : '<button class="sm" onclick="setStatus(\'' + a.id + '\', \'진행중\')">다시 진행</button>') +
+        (active ? '<label style="margin:0;white-space:nowrap">낙찰자</label><select class="grow" id="w-' + a.id + '">' + opts + '</select>' +
+                  '<button class="sm primary" onclick="closeAuction(\'' + a.id + '\', this)">마감</button>'
+                : '<span class="grow"></span><button class="sm" onclick="reopenAuction(\'' + a.id + '\')">다시 진행</button>') +
         '<button class="sm no" onclick="deleteAuction(\'' + a.id + '\')">삭제</button>' +
       '</div>' +
       '<div class="muted">등록 ' + fmtDate(a.createdAt) + ' · ' + esc(a.createdBy) + (a.closedAt ? ' · 마감 ' + fmtDate(a.closedAt) : '') + '</div>' +
     '</div>';
-  }).join('') : '<div class="card">' + emptyState('아직 연 경매가 없다냥', 'siamese') + '</div>';
 }
 
-function setStatus(id, status) {
-  var a = state.auctions.filter(function (x) { return x.id === id; })[0];
-  if (status === '마감' && a && !a.winner && a.top && !confirm('마감하면 전투력 1순위 ' + a.top.nickname + ' 님이 자동 낙찰된다냥. 마감할까?')) return;
-  call('updateAuction', { id: id, status: status }).then(function () { toast(status === '마감' ? '마감했다냥!' : '다시 진행한다냥'); loadAuctions(); }).catch(function () {});
-}
-function setWinner(id) {
+// 마감 = 고른 낙찰자로 결과 저장 + 마감 (낙찰이력 기록, 회차 검사까지 서버에서 한 번에)
+function closeAuction(id, btn) {
+  var a = state.auctions.filter(function (x) { return x.id === id; })[0]; if (!a) return;
   var w = $('w-' + id).value;
-  call('updateAuction', { id: id, winner: w }).then(function () { toast(w ? '낙찰자: ' + w : '낙찰자를 비웠습니다.'); loadAuctions(); }).catch(function () {});
+  if (!confirm('"' + a.itemName + '" 경매를 마감할까냥?\n' + (w ? '🏆 낙찰: ' + w + ' (' + won(a.price) + ')' : '낙찰자 없이 유찰로 마감한다냥.'))) return;
+  btn.disabled = true;
+  call('updateAuction', { id: id, status: '마감', winner: w }).then(function () {
+    toast(w ? '마감했다냥! 낙찰: ' + w : '유찰로 마감했다냥'); loadAuctions(); loadRecords(true);
+  }).catch(function () { btn.disabled = false; });
+}
+function reopenAuction(id) {
+  if (!confirm('이 경매를 다시 진행할까냥?\n낙찰 기록은 지워지고, 다시 마감할 때 새로 저장된다냥.')) return;
+  call('updateAuction', { id: id, status: '진행중', winner: '' }).then(function () { toast('다시 진행한다냥'); loadAuctions(); loadRecords(true); }).catch(function () {});
 }
 function deleteAuction(id) {
   if (!confirm('이 경매와 참여 기록을 삭제할까요?')) return;
-  call('deleteAuction', { id: id }).then(function () { toast('삭제했습니다.'); loadAuctions(); }).catch(function () {});
+  call('deleteAuction', { id: id }).then(function () { toast('삭제했습니다.'); loadAuctions(); loadRecords(true); }).catch(function () {});
 }
 
 /* ---------- 아이템 DB (길마) ---------- */
@@ -991,7 +1048,7 @@ function renderItems() {
   list.forEach(function (i) {
     var cat = i.category || '분류 없음';
     if (cat !== lastCat) {
-      html += '<tr><td colspan="6" style="background:var(--panel2);font-weight:700;color:var(--accent)">' + esc(cat) + '</td></tr>';
+      html += '<tr><td colspan="6" style="background:' + catColor(cat) + ';font-weight:800;color:var(--ink)">' + esc(cat) + '</td></tr>';
       lastCat = cat;
     }
     var del = !!state.itemDel[i.id];
@@ -1269,7 +1326,7 @@ function renderOptouts(scope) {
   var html = '', last = null;
   list.forEach(function (i) {
     var cat = i.category || '분류 없음';
-    if (cat !== last) { html += '<div class="rot-group">' + esc(cat) + '</div>'; last = cat; }
+    if (cat !== last) { html += '<div class="rot-group"><span class="catpill" style="background:' + catColor(cat) + '">' + esc(cat) + '</span></div>'; last = cat; }
     var off = optOff(i, u), chg = off !== i.optedOut;
     html += '<div class="opt-row' + (off ? ' on' : '') + (chg ? ' chg' : '') + '"><span class="nm">' + esc(i.name) + '</span>' +
       (i.won ? '<span class="badge join">이번 회차 받음</span>' : '') +
@@ -1354,6 +1411,14 @@ function mxLists() {
 }
 $('x-item').addEventListener('input', function () { if (state.mx) renderMatrix(); });
 $('x-nick').addEventListener('input', function () { if (state.mx) renderMatrix(); });
+// 분류별 헤더 색: 따뜻한 파스텔 톤. 정해진 분류 외에는 이름으로 순서대로 배정
+var CATEGORY_COLORS = { '주무기': '#ffd9c2', '보조무기': '#e2ecc9', '공용': '#d8e8f2', '장신구': '#f1dcec', '스킬': '#fff0b8', '분류 없음': '#ece4d6' };
+var CAT_EXTRA = ['#e4dcf4', '#cfeee3', '#fde0d0', '#f6e6c4'];
+function catColor(c) {
+  if (CATEGORY_COLORS[c]) return CATEGORY_COLORS[c];
+  var h = 0; for (var k = 0; k < c.length; k++) h = (h * 31 + c.charCodeAt(k)) >>> 0;
+  return CAT_EXTRA[h % CAT_EXTRA.length];
+}
 function renderMatrix() {
   var L = mxLists();
   state.mxView = L;
@@ -1369,9 +1434,10 @@ function renderMatrix() {
     groups[groups.length - 1].n++;
   });
   var head1 = '<tr><th class="nk" rowspan="2">닉네임</th><th rowspan="2" style="vertical-align:bottom">메모</th>' +
-    groups.map(function (g) { return '<th class="cg" colspan="' + g.n + '">' + esc(g.name) + '</th>'; }).join('') + '</tr>';
+    groups.map(function (g) { return '<th class="cg gs" colspan="' + g.n + '" style="background:' + catColor(g.name) + '">' + esc(g.name) + '</th>'; }).join('') + '</tr>';
   var head2 = '<tr>' + L.items.map(function (i, k) {
-    return '<th class="it" data-col="' + k + '" title="' + esc(i.name) + ' [' + esc(i.job || '공용') + '] — 눌러서 열 전체 바꾸기"><span>' + esc(i.name) + '</span></th>';
+    var first = !k || (L.items[k - 1].category || '분류 없음') !== (i.category || '분류 없음');
+    return '<th class="it' + (first ? ' gs' : '') + '" style="background:' + catColor(i.category || '분류 없음') + '" data-col="' + k + '" title="' + esc(i.name) + ' [' + esc(i.job || '공용') + '] — 눌러서 열 전체 바꾸기"><span>' + esc(i.name) + '</span></th>';
   }).join('') + '</tr>';
   var body = L.members.map(function (m, r) {
     var memo = state.mxMemo[m.nickname] !== undefined ? state.mxMemo[m.nickname] : mxMemoOrig(m);
@@ -1445,41 +1511,108 @@ function dropEdits() {
 }
 window.addEventListener('beforeunload', function (e) { if (state.user && pendingEdits()) { e.preventDefault(); e.returnValue = ''; } });
 
-/* ---------- 낙찰 순번 (길마/부길마) ---------- */
-state.rotation = [];
-function loadRotation() {
-  return call('listRotation').then(function (list) { state.rotation = sortItems(list); renderRotation(); }).catch(function () {});
+/* ---------- 낙찰 기록 (길마/부길마) ---------- */
+// state.records = 아이템별 기록, state.recAuctions = 경매 목록(최근순), state.recRound[아이템ID] = 보고 있는 회차(없으면 진행중 회차)
+state.records = null; state.recAuctions = []; state.recFilter = 'all'; state.recPage = 1; state.recRound = {};
+var REC_PAGE_SIZE = 10, REC_PAGE_GROUP = 10;
+function loadRecords(silent) {
+  return call('listRecords', {}, silent).then(function (d) {
+    state.records = sortItems(d.items); state.recAuctions = d.auctions;
+    if (state.tab === 'rotation') renderRecords();
+    if (state.tab === 'manage') renderPickInfo();
+  }).catch(function () {});
 }
-$('r-filter').addEventListener('input', renderRotation);
-$('r-mine').addEventListener('change', renderRotation);
-function renderRotation() {
-  var q = $('r-filter').value.trim().toLowerCase(), mine = $('r-mine').checked;
-  var list = state.rotation.filter(function (r) {
-    if (mine && r.job && r.job !== state.user.job) return false;
-    if (!q) return true;
-    var names = r.won.concat(r.remaining, r.optedOut).map(function (x) { return x.nickname; }).join(' ');
-    return (r.name + ' ' + (r.job || '공용') + ' ' + (r.category || '') + ' ' + names).toLowerCase().indexOf(q) >= 0;
-  });
+$('r-filters').querySelectorAll('button').forEach(function (b) {
+  b.onclick = function () {
+    state.recFilter = b.dataset.f;
+    $('r-filters').querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); });
+    renderRecords();
+  };
+});
+function renderRecords() {
+  if (!state.records) return;
+  if (state.recFilter === 'recent') return renderAuctionPages();
+  var f = state.recFilter;
+  var list = state.records.filter(function (r) { return f === 'all' || String(r.category || '').indexOf(f) === 0; });
   if (!list.length) { $('rotation-list').innerHTML = '<div class="card">' + emptyState('보여줄 아이템이 없다냥', 'gray') + '</div>'; return; }
   var html = '', last = null;
   list.forEach(function (r) {
     var cat = r.category || '분류 없음';
-    if (cat !== last) { html += '<div class="rot-group">' + esc(cat) + '</div>'; last = cat; }
-    var total = r.won.length + r.remaining.length, pct = total ? Math.round(r.won.length / total * 100) : 0;
-    html += '<div class="card" style="display:grid;gap:10px">' +
-      '<div class="rot-head"><span class="name">' + esc(r.name) + '</span>' +
-        (r.job ? '<span class="badge jobtag">' + esc(r.job) + '</span>' : '<span class="badge">공용</span>') +
-        '<span class="badge">🔄 ' + r.round + '회차</span>' +
-        '<span class="spacer" style="flex:1"></span>' +
-        '<button class="sm" onclick="resetRound(\'' + r.id + '\')">다음 회차로</button></div>' +
-      '<div class="row" style="gap:10px"><div class="bar grow"><i style="width:' + pct + '%"></i></div>' +
-        '<span class="hand" style="font-size:16px">' + r.won.length + ' / ' + total + '명 받음</span></div>' +
-      '<div><div class="muted" style="margin-bottom:4px">🎁 이번 회차에 받은 냥이</div>' + chipList(r.won, 'won') + '</div>' +
-      '<div><div class="muted" style="margin-bottom:4px">⏳ 아직 못 받은 냥이 (전투력순)</div>' + chipList(r.remaining, '', true) + '</div>' +
-      (r.optedOut.length ? '<div><div class="muted" style="margin-bottom:4px">🙅 안 받는 냥이</div>' + chipList(r.optedOut, 'out') + '</div>' : '') +
-    '</div>';
+    if (cat !== last) { html += (last !== null ? '</div>' : '') + '<div class="rot-group"><span class="catpill" style="background:' + catColor(cat) + '">' + esc(cat) + '</span></div><div class="cards-grid">'; last = cat; }
+    html += recordCard(r);
   });
-  $('rotation-list').innerHTML = html;
+  $('rotation-list').innerHTML = html + '</div>';
+}
+function recordCard(r) {
+  var view = state.recRound[r.id] || r.round, isNow = view === r.round;
+  var rows = r.history.filter(function (h) { return h.round === view; });
+  var opts = '';
+  for (var n = r.round; n >= 1; n--) opts += '<option value="' + n + '"' + (n === view ? ' selected' : '') + '>' + n + '회차' + (n === r.round ? ' (진행중)' : '') + '</option>';
+  var head = '<div class="rot-head"><span class="name">' + esc(r.name) + '</span>' +
+    (r.job ? '<span class="badge jobtag">' + esc(r.job) + '</span>' : '<span class="badge">공용</span>') +
+    r.active.map(function (a) { return '<span class="badge active">📢 경매중 ' + won(a.price) + '</span>'; }).join('') +
+    '<span class="spacer" style="flex:1"></span>' +
+    '<select class="rsel" onchange="viewRound(\'' + r.id + '\', this.value)">' + opts + '</select>' +
+    (isNow ? '<button class="sm" onclick="advanceRound(\'' + r.id + '\')">차수 넘기기</button>' : '') + '</div>';
+  if (!isNow) {
+    return '<div class="card" style="display:grid;gap:10px">' + head +
+      '<div class="muted">📜 ' + view + '회차 결과 · ' + rows.length + '명 받음</div>' + recTable(rows) + '</div>';
+  }
+  var got = {}; rows.forEach(function (h) { got[h.nickname] = 1; });
+  var gotN = Object.keys(got).length, total = gotN + r.remaining.length, pct = total ? Math.round(gotN / total * 100) : 0;
+  return '<div class="card" style="display:grid;gap:10px">' + head +
+    '<div class="row" style="gap:10px"><div class="bar grow"><i style="width:' + pct + '%"></i></div>' +
+      '<span class="hand" style="font-size:16px">' + gotN + ' / ' + total + '명 받음</span></div>' +
+    '<div><div class="muted" style="margin-bottom:4px">🎁 받은 냥이</div>' + recTable(rows) + '</div>' +
+    '<div><div class="muted" style="margin-bottom:4px">⏳ 아직 안 받은 냥이</div>' + chipList(r.remaining, '', true) + '</div>' +
+    (r.optedOut.length ? '<div><div class="muted" style="margin-bottom:4px">🙅 안 받는 냥이</div>' + chipList(r.optedOut, 'out') + '</div>' : '') +
+  '</div>';
+}
+function viewRound(itemId, n) { state.recRound[itemId] = Number(n); renderRecords(); }
+// 차수 넘기기: 경매 관리 / 낙찰 기록 공용
+function advanceRound(itemId) {
+  var r = recordOf(itemId); if (!r) return Promise.resolve();
+  if (!confirm('"' + r.name + '"을(를) ' + (r.round + 1) + '회차로 넘길까냥?\n이번 회차에 받은 냥이도 다시 입찰할 수 있게 된다냥. (기록은 남음)')) return Promise.resolve();
+  return call('resetRound', { itemId: itemId }).then(function (n) {
+    toast(n + '회차로 넘겼다냥'); delete state.recRound[itemId]; return loadRecords();
+  }).catch(function () {});
+}
+
+// 최근 경매: 경매 단위, 최근순 고정, 한 페이지 10개, 페이지 번호 10개씩 묶음
+function renderAuctionPages() {
+  var all = state.recAuctions, pages = Math.max(1, Math.ceil(all.length / REC_PAGE_SIZE));
+  if (state.recPage > pages) state.recPage = pages;
+  var p = state.recPage, list = all.slice((p - 1) * REC_PAGE_SIZE, p * REC_PAGE_SIZE);
+  if (!all.length) { $('rotation-list').innerHTML = '<div class="card">' + emptyState('아직 연 경매가 없다냥', 'gray') + '</div>'; return; }
+  var rows = list.map(function (a) {
+    var cat = a.category || '분류 없음';
+    var result = a.status === '진행중' ? '<span class="badge active">진행중</span>'
+      : a.winner ? '🏆 <b' + (a.winner === state.user.nickname ? ' style="color:var(--accent)"' : '') + '>' + esc(a.winner) + '</b>' : '<span class="muted">유찰</span>';
+    return '<tr><td>' + fmtDate(a.createdAt) + '</td>' +
+      '<td><b>' + esc(a.itemName) + '</b></td>' +
+      '<td><span class="catpill sm" style="background:' + catColor(cat) + '">' + esc(cat) + '</span></td>' +
+      '<td class="num">' + (a.round ? a.round + '회차' : '-') + '</td>' +
+      '<td class="num">' + won(a.price) + '</td><td>' + result + '</td></tr>';
+  }).join('');
+  var g0 = Math.floor((p - 1) / REC_PAGE_GROUP) * REC_PAGE_GROUP + 1, g1 = Math.min(pages, g0 + REC_PAGE_GROUP - 1);
+  var nav = '<div class="pager">' +
+    '<button class="sm"' + (g0 === 1 ? ' disabled' : '') + ' onclick="goRecPage(' + (g0 - 1) + ')">◀ 이전</button>';
+  for (var n = g0; n <= g1; n++) nav += '<button class="sm' + (n === p ? ' primary' : '') + '" onclick="goRecPage(' + n + ')">' + n + '</button>';
+  nav += '<button class="sm"' + (g1 >= pages ? ' disabled' : '') + ' onclick="goRecPage(' + (g1 + 1) + ')">다음 ▶</button></div>';
+  $('rotation-list').innerHTML = '<div class="card">' +
+    '<div class="muted" style="margin-bottom:8px">📅 최근순 · 전체 ' + all.length + '건 · ' + p + ' / ' + pages + '쪽</div>' +
+    '<div class="table-scroll"><table class="rec"><tr><th>날짜</th><th>아이템</th><th>분류</th><th class="num">회차</th><th class="num">가격</th><th>결과</th></tr>' + rows + '</table></div>' +
+    nav + '</div>';
+}
+function goRecPage(n) { state.recPage = n; renderAuctionPages(); window.scrollTo({ top: $('r-filters').offsetTop - 10 }); }
+function recTable(rows, withRound) {
+  if (!rows.length) return '<span class="muted">없음</span>';
+  return '<table class="rec"><tr>' + (withRound ? '<th>회차</th>' : '') + '<th>냥이</th><th class="num">가격</th><th class="num">날짜</th></tr>' +
+    rows.map(function (h) {
+      return '<tr>' + (withRound ? '<td>' + h.round + '회차</td>' : '') +
+        '<td' + (h.nickname === state.user.nickname ? ' style="font-weight:800;color:var(--accent)"' : '') + '>' + esc(h.nickname) + '</td>' +
+        '<td class="num">' + (h.price == null ? '-' : won(h.price)) + '</td><td class="num">' + fmtDate(h.at) + '</td></tr>';
+    }).join('') + '</table>';
 }
 function chipList(arr, cls, withPower) {
   if (!arr.length) return '<span class="muted">없음</span>';
@@ -1487,12 +1620,6 @@ function chipList(arr, cls, withPower) {
     return '<span class="chip ' + cls + (x.nickname === state.user.nickname ? ' me' : '') + '">' + esc(x.nickname) +
       (withPower && x.power ? ' <span style="opacity:.7">· ' + fmtPower(x.power) + '</span>' : '') + '</span>';
   }).join('') + '</div>';
-}
-function resetRound(itemId) {
-  var r = state.rotation.filter(function (x) { return x.id === itemId; })[0]; if (!r) return;
-  var name = r.name, round = r.round;
-  if (!confirm('"' + name + '"을(를) ' + (round + 1) + '회차로 넘길까냥?\n이번 회차에 받은 기록과 상관없이 모두 다시 입찰할 수 있게 된다냥. (기록은 남음)')) return;
-  call('resetRound', { itemId: itemId }).then(function (n) { toast(n + '회차로 넘겼다냥'); loadRotation(); }).catch(function () {});
 }
 
 /* ---------- 내 정보 ---------- */
