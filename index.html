@@ -227,6 +227,12 @@
   .savebar.idle button { opacity: .5; }
   .tgl { min-width: 84px; padding: 5px 10px; font-size: 14px; border-radius: 99px; box-shadow: 0 2px 0 var(--ink); background: var(--ok); color: #fff; }
   .tgl.off { background: #eee3d0; color: var(--muted); }
+  .absgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 6px 14px; max-height: 360px; overflow: auto; padding: 2px; }
+  .absrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 4px 4px 10px; border: 2px solid var(--line); border-radius: 12px; background: #fff; }
+  .absrow.off { background: #fde2dc; border-color: #f0b5a8; }
+  .absrow.off .nm b { text-decoration: line-through; color: var(--muted); }
+  .absrow .tgl { min-width: 104px; flex: none; }
+  .absrow .tgl.off { background: var(--no); color: #fff; }
   .opt-row.chg { background: #fff3dc; border-radius: 10px; }
 
   /* ---------- 닉네임 × 아이템 표 ---------- */
@@ -776,7 +782,7 @@ function nameChips(names, winner, jobs) {
   }).join('') + '</div>';
 }
 
-var BLOCK_TEXT = { job: '직업 불일치', won: '이번 회차에 이미 낙찰', optout: '참여 제외 지정' };
+var BLOCK_TEXT = { admin: 'admin 계정 참여 불가', job: '직업 불일치', won: '이번 회차에 이미 낙찰', optout: '참여 제외 지정' };
 function blockText(reason) { return BLOCK_TEXT[reason] || ''; }
 
 function topBox(a) {
@@ -832,7 +838,7 @@ function renderAuctions() {
         (a.memo ? '<span class="muted">📝 ' + esc(a.memo) + '</span>' : '') + '</div>' +
       topBox(a) +
       '<div class="row"><span class="muted">내 선택:</span>' +
-        (my === '참여' ? '<span class="badge join">참여한다냥</span>' : my === '불참' ? '<span class="badge decline">패스</span>' : '<span class="muted">아직 안 골랐다냥</span>') +
+        (my === '참여' ? '<span class="badge join">참여한다냥</span>' : my === '불참' ? '<span class="badge decline">패스</span>' : my === ENTRY_ABSENT ? '<span class="badge decline">🚫 레이드 미참여</span>' : '<span class="muted">아직 안 골랐다냥</span>') +
       '</div>' +
       (a.canBid
         ? '<div class="row">' +
@@ -854,8 +860,10 @@ function renderAuctions() {
 
 function lockBox(a) {
   var my = a.myEntry, html;
-  if (a.myBlock === 'won') {
-    html = '<div class="lock">🎁 이번 회차(' + a.round + '회차)에 이미 받은 아이템이다냥. 모두 한 번씩 받으면 다시 입찰할 수 있다냥!</div>';
+  if (a.myBlock === 'admin') {
+    html = '<div class="lock">🛠️ admin 계정은 경매에 참여할 수 없다냥. 길드원 계정으로 로그인해서 참여하라냥!</div>';
+  } else if (a.myBlock === 'won') {
+    html ='<div class="lock">🎁 이번 회차(' + a.round + '회차)에 이미 받은 아이템이다냥. 모두 한 번씩 받으면 다시 입찰할 수 있다냥!</div>';
   } else if (a.myBlock === 'optout') {
     html = '<div class="lock">🙅 안 받기로 지정한 아이템이다냥.</div>' +
       '<div><button class="sm" onclick="quickOptout(\'' + a.id + '\', false)">지정 취소하고 입찰하기</button></div>';
@@ -875,10 +883,19 @@ function quickOptout(auctionId, on) {
   }).catch(function () {});
 }
 
+var ENTRY_ABSENT = '레이드미참여';
+var ABSENT_MSG = '이번에는 길드레이드에 참가하지 않아서 참여할 수 없다냥';
+function showNotice(msg) {
+  $('modal-body').innerHTML = emptyState(esc(msg), 'gray') +
+    '<div style="text-align:center;margin-top:10px"><button class="primary" onclick="closeModal()">알겠다냥</button></div>';
+  $('modal').classList.remove('hidden');
+}
 function setEntry(id, join) {
+  var a = state.auctions.filter(function (x) { return x.id === id; })[0];
+  if (a && a.myEntry === ENTRY_ABSENT) return showNotice(ABSENT_MSG);
   call('setEntry', { auctionId: id, join: join }).then(function () {
     toast(join ? '참여 완료다냥! 🐾' : '이번엔 패스했다냥'); loadAuctions(true);
-  }).catch(function () { loadAuctions(true); });
+  }).catch(function (e) { if (String(e && e.message || e).indexOf('길드레이드') >= 0) showNotice(ABSENT_MSG); loadAuctions(true); });
 }
 
 /* ---------- 경매 관리 (길마) ---------- */
@@ -910,23 +927,44 @@ function onItemPick() {
   renderPickInfo();
 }
 
-// 고른 아이템의 이번 회차 / 입찰할 수 있는 냥이 (낙찰 기록 데이터 재사용)
+// 고른 아이템의 이번 회차 / 대상 길드원 (낙찰 기록 데이터 재사용)
+// state.absent = { 닉네임: true } : 이번 경매에서 '레이드 미참여'로 뺄 길드원 (아이템을 바꾸면 초기화)
+state.absent = {}; state.absentItem = null;
 function recordOf(itemId) { return (state.records || []).filter(function (r) { return r.id === itemId; })[0]; }
 function renderPickInfo() {
   var itemId = $('a-item').value, r = itemId && recordOf(itemId);
+  if (state.absentItem !== itemId) { state.absent = {}; state.absentItem = itemId; }
   $('a-next').disabled = !r;
   $('a-round').textContent = r ? r.round + '회차' : '-';
   if (!itemId) { $('a-who').classList.add('hidden'); return; }
   $('a-who').classList.remove('hidden');
-  if (!r) { $('a-who').innerHTML = '<span class="muted">입찰할 수 있는 냥이를 불러오는 중이다냥…</span>'; return; }
-  var won = r.history.filter(function (h) { return h.round === r.round; });
+  if (!r) { $('a-who').innerHTML = '<span class="muted">대상 길드원을 불러오는 중이다냥…</span>'; return; }
+  var wonSet = {}, outSet = {};
+  r.history.forEach(function (h) { if (h.round === r.round) wonSet[h.nickname] = 1; });
+  r.optedOut.forEach(function (o) { outSet[o.nickname] = 1; });
+  var nAbs = r.eligible.filter(function (m) { return state.absent[m.nickname]; }).length;
+  var rows = r.eligible.map(function (m) {
+    var off = !!state.absent[m.nickname];
+    var note = wonSet[m.nickname] ? '<span class="badge join">이번 회차 받음</span>' : outSet[m.nickname] ? '<span class="badge">안 받는 템</span>' : '';
+    return '<div class="absrow' + (off ? ' off' : '') + '">' +
+      '<span class="nm"><b>' + esc(m.nickname) + '</b> <span class="muted">' + fmtPower(m.power) + (r.job ? '' : ' · ' + esc(m.job || '직업 미설정')) + '</span> ' + note + '</span>' +
+      '<button class="tgl' + (off ? ' off' : '') + '" data-abs="' + esc(m.nickname) + '">' + (off ? '레이드 미참여' : '경매 가능') + '</button></div>';
+  }).join('');
   $('a-who').innerHTML =
-    '<div><div class="muted" style="margin-bottom:4px">🙋 입찰할 수 있는 냥이 ' + r.remaining.length + '명 (전투력순)' +
-      (r.job ? ' · ' + esc(r.job) + ' 전용' : '') + '</div>' +
-      (r.remaining.length ? chipList(r.remaining, '', true) : '<span class="muted">없다냥. 차수를 넘기면 다시 다 입찰할 수 있다냥.</span>') + '</div>' +
-    (won.length ? '<div><div class="muted" style="margin-bottom:4px">🎁 이번 회차에 받은 냥이 (입찰 불가)</div>' + chipList(won, 'won') + '</div>' : '') +
-    (r.optedOut.length ? '<div><div class="muted" style="margin-bottom:4px">🙅 안 받는 냥이</div>' + chipList(r.optedOut, 'out') + '</div>' : '');
+    '<div class="row" style="justify-content:space-between">' +
+      '<span class="muted">👥 ' + (r.job ? esc(r.job) + ' 전용 · ' : '공용 · ') + '대상 길드원 ' + r.eligible.length + '명 (전투력순) · ' +
+        '<b style="color:var(--no)">레이드 미참여 ' + nAbs + '명</b></span>' +
+      (nAbs ? '<button class="sm" onclick="clearAbsent()">모두 경매 가능</button>' : '') + '</div>' +
+    '<div class="muted" style="margin-top:-4px">길드 레이드에 안 온 냥이는 눌러서 <b>레이드 미참여</b>로 바꿔라냥. 이번 경매에 참여할 수 없다냥.</div>' +
+    (rows ? '<div class="absgrid">' + rows + '</div>' : '<span class="muted">대상 길드원이 없다냥.</span>');
 }
+$('a-who').addEventListener('click', function (e) {
+  var b = e.target.closest && e.target.closest('[data-abs]'); if (!b) return;
+  var n = b.getAttribute('data-abs');
+  if (state.absent[n]) delete state.absent[n]; else state.absent[n] = true;
+  renderPickInfo();
+});
+function clearAbsent() { state.absent = {}; renderPickInfo(); }
 function nextRound() {
   var id = $('a-item').value; if (!recordOf(id)) return;
   $('a-next').disabled = true;
@@ -936,10 +974,13 @@ function nextRound() {
 function createAuction() {
   var itemId = $('a-item').value;
   if (!itemId) return toast('아이템을 선택하세요.', true);
+  var absent = Object.keys(state.absent).filter(function (n) { return state.absent[n]; });
+  if (absent.length && !confirm('레이드 미참여 ' + absent.length + '명은 이번 경매에 참여할 수 없다냥:\n' + absent.join(', ') + '\n경매를 열까?')) return;
   $('a-submit').disabled = true;
-  call('createAuction', { itemId: itemId, price: $('a-price').value, memo: $('a-memo').value }).then(function () {
-    toast('경매가 활성화되었습니다.');
+  call('createAuction', { itemId: itemId, price: $('a-price').value, memo: $('a-memo').value, absent: absent }).then(function () {
+    toast('경매가 활성화되었습니다.' + (absent.length ? ' (레이드 미참여 ' + absent.length + '명)' : ''));
     $('a-memo').value = ''; $('a-item').value = ''; $('a-price').value = ''; $('a-pricebox').classList.add('hidden');
+    state.absent = {};
     renderPickInfo();
     loadAuctions(); loadRecords(true);
   }).catch(function () {}).then(function () { $('a-submit').disabled = false; });
@@ -969,6 +1010,7 @@ function manageCard(a) {
       (a.winner ? '<div class="hand" style="font-size:18px">🏆 낙찰: ' + esc(a.winner) + '</div>' : '') +
       topBox(a) +
       (a.declined.length ? '<div><div class="muted" style="margin-bottom:4px">불참 ' + a.declined.length + '명</div>' + nameChips(a.declined, null, a.jobs) + '</div>' : '') +
+      (a.absent && a.absent.length ? '<div><div class="muted" style="margin-bottom:4px">🚫 레이드 미참여 ' + a.absent.length + '명</div><div class="chips">' + a.absent.map(function (n) { return '<span class="chip out">' + esc(n) + '</span>'; }).join('') + '</div></div>' : '') +
       '<div class="row">' +
         (active ? '<label style="margin:0;white-space:nowrap">낙찰자</label><select class="grow" id="w-' + a.id + '">' + opts + '</select>' +
                   '<button class="sm primary" onclick="closeAuction(\'' + a.id + '\', this)">마감</button>'
