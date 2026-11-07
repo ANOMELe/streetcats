@@ -1291,6 +1291,7 @@ function renderMembers() {
       '<td class="muted">' + fmtDate(m.lastLogin) + '</td>' +
       '<td class="num"><div class="row" style="justify-content:flex-end">' +
         '<button class="sm" onclick="openMemberOptouts(' + idx + ')">안 받을 템</button>' +
+        (canEdit && m.nickname.toLowerCase() !== 'admin' ? '<button class="sm" onclick="memberAct(' + idx + ',\'rename\')">닉네임 변경</button>' : '') +
         (!canManage ? '' :
           '<button class="sm" onclick="memberAct(' + idx + ',\'reset\')">비번 초기화</button>' +
           '<button class="sm no" onclick="memberAct(' + idx + ',\'delete\')">삭제</button>') +
@@ -1335,6 +1336,7 @@ function saveMemberEdits() {
 function memberAct(idx, kind) {
   var m = state.members[idx]; if (!m) return;
   var p;
+  if (kind === 'rename') return renameMember(m);
   if (kind === 'reset') {
     if (!confirm(m.nickname + ' 님의 비밀번호를 초기화할까요? 다음 로그인 때 새 비밀번호를 정하게 됩니다.')) return;
     p = call('resetPassword', { nickname: m.nickname });
@@ -1346,6 +1348,24 @@ function memberAct(idx, kind) {
     toast('처리했습니다.');
     // 다른 냥이 줄에 고쳐둔 값은 유지
     var keep = state.memEdits;
+    return call('listMembers').then(function (list) { state.members = list; state.memEdits = keep; renderMembers(); });
+  }).catch(function () {});
+}
+
+// 닉네임 변경: 경매·참여·낙찰이력·안 받을 템 기록의 이름까지 서버에서 한 번에 바꿈 (기록·진행 상태는 그대로)
+function renameMember(m) {
+  var nn = prompt('"' + m.nickname + '" 님의 새 닉네임을 입력하라냥.\n경매 기록, 참여, 낙찰 기록, 안 받을 템은 그대로 새 닉네임으로 이어진다냥.', m.nickname);
+  if (nn == null) return;
+  nn = nn.trim();
+  if (!nn || nn === m.nickname) return toast('닉네임이 그대로다냥', true);
+  if (state.members.some(function (x) { return x.nickname === nn; })) return toast('이미 있는 닉네임이다냥: ' + nn, true);
+  if (!confirm('"' + m.nickname + '" → "' + nn + '" 으로 바꿀까냥?')) return;
+  call('renameMember', { nickname: m.nickname, newNickname: nn }).then(function (r) {
+    var n = Object.keys(r.changed).reduce(function (s, k) { return s + r.changed[k]; }, 0);
+    toast('닉네임을 바꿨다냥! (기록 ' + n + '칸 갱신)');
+    if (m.nickname === state.user.nickname) { state.user.nickname = nn; $('me-nick').textContent = nn; }
+    var keep = state.memEdits;
+    if (keep[m.nickname]) { keep[nn] = keep[m.nickname]; delete keep[m.nickname]; }
     return call('listMembers').then(function (list) { state.members = list; state.memEdits = keep; renderMembers(); });
   }).catch(function () {});
 }
