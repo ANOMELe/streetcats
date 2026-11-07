@@ -235,7 +235,7 @@
   table.mx { width: auto; border-collapse: separate; border-spacing: 0; }
   .mx th, .mx td { padding: 4px; border-bottom: 1.5px dashed var(--line); border-right: 1.5px dashed var(--line); text-align: center; white-space: nowrap; border-radius: 0 !important; }
   .mx thead th { position: sticky; top: 0; z-index: 2; background: var(--panel2); vertical-align: bottom; border-bottom: 2.5px solid var(--ink); }
-  .mx th.it { cursor: pointer; padding: 6px 3px; }
+  .mx th.it { cursor: pointer; padding: 6px 3px; vertical-align: top; }
   .mx th.it span { display: inline-block; writing-mode: vertical-rl; max-height: 11em; white-space: normal; word-break: keep-all; line-height: 1.25; color: var(--ink); font-size: 12px; font-weight: 700; text-align: left; }
   .mx th.it:hover { filter: brightness(.94); }
   .mx th.gs { border-left: 2.5px solid var(--ink); }
@@ -478,8 +478,8 @@
         </div>
         <p class="muted">칸을 눌러 <b class="mx-on">○ 받기</b> / <b class="mx-off">✕ 안 받기</b>를 바꾸고 <b>한꺼번에 저장</b>하라냥. <span style="color:#bba58a">·</span> 는 직업이 안 맞아 원래 못 받는 칸. 아이템 이름을 누르면 그 열 전체를 바꾼다냥.</p>
         <div class="row" style="margin-bottom:10px">
-          <input id="x-item" class="grow" placeholder="아이템·분류·직업으로 찾기">
           <input id="x-nick" class="grow" placeholder="닉네임·직업으로 찾기">
+          <input id="x-item" class="grow" placeholder="아이템·분류·직업으로 찾기">
         </div>
         <div class="mx-wrap"><table class="mx" id="x-table"></table></div>
         <div class="savebar idle" id="x-bar">
@@ -1419,6 +1419,8 @@ function catColor(c) {
   var h = 0; for (var k = 0; k < c.length; k++) h = (h * 31 + c.charCodeAt(k)) >>> 0;
   return CAT_EXTRA[h % CAT_EXTRA.length];
 }
+// 표 머리글이 길어지지 않게 직업명 축약 (마우스를 올리면 전체 이름)
+function mxShortName(n) { return String(n).replace(/엘리멘탈리스트/g, '엘리멘탈'); }
 function renderMatrix() {
   var L = mxLists();
   state.mxView = L;
@@ -1437,7 +1439,7 @@ function renderMatrix() {
     groups.map(function (g) { return '<th class="cg gs" colspan="' + g.n + '" style="background:' + catColor(g.name) + '">' + esc(g.name) + '</th>'; }).join('') + '</tr>';
   var head2 = '<tr>' + L.items.map(function (i, k) {
     var first = !k || (L.items[k - 1].category || '분류 없음') !== (i.category || '분류 없음');
-    return '<th class="it' + (first ? ' gs' : '') + '" style="background:' + catColor(i.category || '분류 없음') + '" data-col="' + k + '" title="' + esc(i.name) + ' [' + esc(i.job || '공용') + '] — 눌러서 열 전체 바꾸기"><span>' + esc(i.name) + '</span></th>';
+    return '<th class="it' + (first ? ' gs' : '') + '" style="background:' + catColor(i.category || '분류 없음') + '" data-col="' + k + '" title="' + esc(i.name) + ' [' + esc(i.job || '공용') + '] — 눌러서 열 전체 바꾸기"><span>' + esc(mxShortName(i.name)) + '</span></th>';
   }).join('') + '</tr>';
   var body = L.members.map(function (m, r) {
     var memo = state.mxMemo[m.nickname] !== undefined ? state.mxMemo[m.nickname] : mxMemoOrig(m);
