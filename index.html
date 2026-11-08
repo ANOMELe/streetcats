@@ -234,6 +234,8 @@
   .absrow.off { background: #fde2dc; border-color: #f0b5a8; }
   .absrow.off .nm b { text-decoration: line-through; color: var(--muted); }
   .absrow .tgl { min-width: 104px; flex: none; }
+  .absrow.blocked { background: #e9e2d6; border-color: #d6cbb8; border-style: dashed; }
+  .absrow.blocked .nm, .absrow.blocked .tgl { opacity: .5; }
   .absrow .tgl.off { background: var(--no); color: #fff; }
   .opt-row.chg { background: #fff3dc; border-radius: 10px; }
 
@@ -734,7 +736,7 @@ function startApp() {
   renderMyJob();
   $('me-role').textContent = state.user.role;
   $('me-role').className = 'badge' + roleClass(state.user.role);
-  var tabs = [['auction', '🐾 경매']];
+  var tabs = [['auction', '🐾 경매 참가']];
   if (isMaster) tabs.push(['manage', '📢 경매 관리'], ['rotation', '📜 낙찰 기록'], ['items', '📦 아이템 창고'], ['members', '🐱 길드 냥이들']);
   tabs.push(['me', '🏠 내 정보']);
   $('tabs').innerHTML = tabs.map(function (t) {
@@ -948,11 +950,14 @@ function renderPickInfo() {
   // 직업 제한을 풀면 전체 길드원이 대상
   var list = r.job && rx.job ? (state.recMembers || []) : r.eligible;
   var nAbs = list.filter(function (m) { return state.absent[m.nickname]; }).length;
+  // 입찰 못 하는 냥이: 이번 회차에 이미 받음 / 안 받을 템(무시를 안 켰을 때) → 흐리게
+  var blockedOf = function (m) { return !!wonSet[m.nickname] || (!!outSet[m.nickname] && !rx.opt); };
+  var nCan = list.filter(function (m) { return !state.absent[m.nickname] && !blockedOf(m); }).length;
   var rows = list.map(function (m) {
-    var off = !!state.absent[m.nickname];
+    var off = !!state.absent[m.nickname], blocked = blockedOf(m);
     var note = wonSet[m.nickname] ? '<span class="badge join">이번 회차 받음</span>'
       : outSet[m.nickname] ? '<span class="badge">' + (rx.opt ? '안 받는 템 (무시)' : '안 받는 템') + '</span>' : '';
-    return '<div class="absrow' + (off ? ' off' : '') + '">' +
+    return '<div class="absrow' + (off ? ' off' : '') + (blocked ? ' blocked' : '') + '"' + (blocked ? ' title="입찰할 수 없는 냥이다냥"' : '') + '>' +
       '<span class="nm"><b>' + esc(m.nickname) + '</b> <span class="muted">' + fmtPower(m.power) + (jobOnly ? '' : ' · ' + esc(m.job || '직업 미설정')) + '</span> ' + note + '</span>' +
       '<button class="tgl' + (off ? ' off' : '') + '" data-abs="' + esc(m.nickname) + '">' + (off ? '레이드 미참여' : '경매 가능') + '</button></div>';
   }).join('');
@@ -963,9 +968,10 @@ function renderPickInfo() {
       '<span class="muted">입찰할 냥이가 없을 때 켜라냥</span></div>' +
     '<div class="row" style="justify-content:space-between">' +
       '<span class="muted">👥 ' + (jobOnly ? esc(r.job) + ' 전용 · ' : r.job ? '누구나 (' + esc(r.job) + ' 직업 제한 해제) · ' : '공용 · ') + '대상 길드원 ' + list.length + '명 (전투력순) · ' +
-        '<b style="color:var(--no)">레이드 미참여 ' + nAbs + '명</b></span>' +
+        '<b style="color:var(--ok)">입찰 가능 ' + nCan + '명</b> · <b style="color:var(--no)">레이드 미참여 ' + nAbs + '명</b></span>' +
       (nAbs ? '<button class="sm" onclick="clearAbsent()">모두 경매 가능</button>' : '') + '</div>' +
-    '<div class="muted" style="margin-top:-4px">길드 레이드에 안 온 냥이는 눌러서 <b>레이드 미참여</b>로 바꿔라냥. 이번 경매에 참여할 수 없다냥.</div>' +
+    '<div class="muted" style="margin-top:-4px">길드 레이드에 안 온 냥이는 눌러서 <b>레이드 미참여</b>로 바꿔라냥. 흐린 냥이는 원래 입찰할 수 없는 냥이다냥.</div>' +
+    (list.length && !nCan ? '<div class="lock">😿 입찰할 수 있는 냥이가 없다냥. <b>차수 넘기기</b>나 <b>입찰 제한 해제</b>를 써라냥.</div>' : '') +
     (rows ? '<div class="absgrid">' + rows + '</div>' : '<span class="muted">대상 길드원이 없다냥.</span>');
 }
 $('a-who').addEventListener('click', function (e) {
