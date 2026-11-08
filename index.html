@@ -227,6 +227,8 @@
   .savebar.idle button { opacity: .5; }
   .tgl { min-width: 84px; padding: 5px 10px; font-size: 14px; border-radius: 99px; box-shadow: 0 2px 0 var(--ink); background: var(--ok); color: #fff; }
   .tgl.off { background: #eee3d0; color: var(--muted); }
+  .relaxrow { gap: 6px; align-items: center; }
+  .badge.relax { background: #fff0b8; border-color: var(--accent); }
   .absgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 6px 14px; max-height: 360px; overflow: auto; padding: 2px; }
   .absrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 4px 4px 10px; border: 2px solid var(--line); border-radius: 12px; background: #fff; }
   .absrow.off { background: #fde2dc; border-color: #f0b5a8; }
@@ -833,7 +835,7 @@ function renderAuctions() {
     return '<div class="card auction">' +
       '<div class="row" style="justify-content:space-between">' +
         '<span class="title">' + esc(a.itemName) + '</span><span class="tag">' + won(a.price) + '</span></div>' +
-      '<div class="row">' + (a.itemJob ? '<span class="badge jobtag">🎯 ' + esc(a.itemJob) + ' 전용</span>' : '<span class="badge">공용</span>') +
+      '<div class="row">' + jobBadge(a) + relaxBadges(a) +
         (a.round ? '<span class="badge">🔄 ' + a.round + '회차</span>' : '') +
         (a.memo ? '<span class="muted">📝 ' + esc(a.memo) + '</span>' : '') + '</div>' +
       topBox(a) +
@@ -929,11 +931,11 @@ function onItemPick() {
 
 // 고른 아이템의 이번 회차 / 대상 길드원 (낙찰 기록 데이터 재사용)
 // state.absent = { 닉네임: true } : 이번 경매에서 '레이드 미참여'로 뺄 길드원 (아이템을 바꾸면 초기화)
-state.absent = {}; state.absentItem = null;
+state.absent = {}; state.absentItem = null; state.relax = { job: false, opt: false };
 function recordOf(itemId) { return (state.records || []).filter(function (r) { return r.id === itemId; })[0]; }
 function renderPickInfo() {
   var itemId = $('a-item').value, r = itemId && recordOf(itemId);
-  if (state.absentItem !== itemId) { state.absent = {}; state.absentItem = itemId; }
+  if (state.absentItem !== itemId) { state.absent = {}; state.absentItem = itemId; state.relax = { job: false, opt: false }; }
   $('a-next').disabled = !r;
   $('a-round').textContent = r ? r.round + '회차' : '-';
   if (!itemId) { $('a-who').classList.add('hidden'); return; }
@@ -942,23 +944,33 @@ function renderPickInfo() {
   var wonSet = {}, outSet = {};
   r.history.forEach(function (h) { if (h.round === r.round) wonSet[h.nickname] = 1; });
   r.optedOut.forEach(function (o) { outSet[o.nickname] = 1; });
-  var nAbs = r.eligible.filter(function (m) { return state.absent[m.nickname]; }).length;
-  var rows = r.eligible.map(function (m) {
+  var rx = state.relax, jobOnly = r.job && !rx.job;
+  // 직업 제한을 풀면 전체 길드원이 대상
+  var list = r.job && rx.job ? (state.recMembers || []) : r.eligible;
+  var nAbs = list.filter(function (m) { return state.absent[m.nickname]; }).length;
+  var rows = list.map(function (m) {
     var off = !!state.absent[m.nickname];
-    var note = wonSet[m.nickname] ? '<span class="badge join">이번 회차 받음</span>' : outSet[m.nickname] ? '<span class="badge">안 받는 템</span>' : '';
+    var note = wonSet[m.nickname] ? '<span class="badge join">이번 회차 받음</span>'
+      : outSet[m.nickname] ? '<span class="badge">' + (rx.opt ? '안 받는 템 (무시)' : '안 받는 템') + '</span>' : '';
     return '<div class="absrow' + (off ? ' off' : '') + '">' +
-      '<span class="nm"><b>' + esc(m.nickname) + '</b> <span class="muted">' + fmtPower(m.power) + (r.job ? '' : ' · ' + esc(m.job || '직업 미설정')) + '</span> ' + note + '</span>' +
+      '<span class="nm"><b>' + esc(m.nickname) + '</b> <span class="muted">' + fmtPower(m.power) + (jobOnly ? '' : ' · ' + esc(m.job || '직업 미설정')) + '</span> ' + note + '</span>' +
       '<button class="tgl' + (off ? ' off' : '') + '" data-abs="' + esc(m.nickname) + '">' + (off ? '레이드 미참여' : '경매 가능') + '</button></div>';
   }).join('');
   $('a-who').innerHTML =
+    '<div class="row relaxrow"><span class="muted">입찰 제한 해제</span>' +
+      (r.job ? '<button class="sm' + (rx.job ? ' primary' : '') + '" data-relax="job">🔓 직업 제한 무시 ' + (rx.job ? '켜짐' : '꺼짐') + '</button>' : '') +
+      '<button class="sm' + (rx.opt ? ' primary' : '') + '" data-relax="opt">🔓 안 받을 템 무시 ' + (rx.opt ? '켜짐' : '꺼짐') + '</button>' +
+      '<span class="muted">입찰할 냥이가 없을 때 켜라냥</span></div>' +
     '<div class="row" style="justify-content:space-between">' +
-      '<span class="muted">👥 ' + (r.job ? esc(r.job) + ' 전용 · ' : '공용 · ') + '대상 길드원 ' + r.eligible.length + '명 (전투력순) · ' +
+      '<span class="muted">👥 ' + (jobOnly ? esc(r.job) + ' 전용 · ' : r.job ? '누구나 (' + esc(r.job) + ' 직업 제한 해제) · ' : '공용 · ') + '대상 길드원 ' + list.length + '명 (전투력순) · ' +
         '<b style="color:var(--no)">레이드 미참여 ' + nAbs + '명</b></span>' +
       (nAbs ? '<button class="sm" onclick="clearAbsent()">모두 경매 가능</button>' : '') + '</div>' +
     '<div class="muted" style="margin-top:-4px">길드 레이드에 안 온 냥이는 눌러서 <b>레이드 미참여</b>로 바꿔라냥. 이번 경매에 참여할 수 없다냥.</div>' +
     (rows ? '<div class="absgrid">' + rows + '</div>' : '<span class="muted">대상 길드원이 없다냥.</span>');
 }
 $('a-who').addEventListener('click', function (e) {
+  var rb = e.target.closest && e.target.closest('[data-relax]');
+  if (rb) { var k = rb.getAttribute('data-relax'); state.relax[k] = !state.relax[k]; return renderPickInfo(); }
   var b = e.target.closest && e.target.closest('[data-abs]'); if (!b) return;
   var n = b.getAttribute('data-abs');
   if (state.absent[n]) delete state.absent[n]; else state.absent[n] = true;
@@ -974,13 +986,19 @@ function nextRound() {
 function createAuction() {
   var itemId = $('a-item').value;
   if (!itemId) return toast('아이템을 선택하세요.', true);
+  var r = recordOf(itemId), rx = state.relax;
+  var ignoreJob = !!(r && r.job && rx.job), ignoreOptout = !!rx.opt;
   var absent = Object.keys(state.absent).filter(function (n) { return state.absent[n]; });
-  if (absent.length && !confirm('레이드 미참여 ' + absent.length + '명은 이번 경매에 참여할 수 없다냥:\n' + absent.join(', ') + '\n경매를 열까?')) return;
+  var notes = [];
+  if (absent.length) notes.push('레이드 미참여 ' + absent.length + '명은 이번 경매에 참여할 수 없다냥:\n' + absent.join(', '));
+  if (ignoreJob) notes.push('🔓 직업 제한 무시: 다른 직업 냥이도 입찰할 수 있다냥.');
+  if (ignoreOptout) notes.push('🔓 안 받을 템 무시: 안 받을 템으로 지정한 냥이도 입찰할 수 있다냥.');
+  if (notes.length && !confirm(notes.join('\n\n') + '\n\n경매를 열까?')) return;
   $('a-submit').disabled = true;
-  call('createAuction', { itemId: itemId, price: $('a-price').value, memo: $('a-memo').value, absent: absent }).then(function () {
+  call('createAuction', { itemId: itemId, price: $('a-price').value, memo: $('a-memo').value, absent: absent, ignoreJob: ignoreJob, ignoreOptout: ignoreOptout }).then(function () {
     toast('경매가 활성화되었습니다.' + (absent.length ? ' (레이드 미참여 ' + absent.length + '명)' : ''));
     $('a-memo').value = ''; $('a-item').value = ''; $('a-price').value = ''; $('a-pricebox').classList.add('hidden');
-    state.absent = {};
+    state.absent = {}; state.relax = { job: false, opt: false };
     renderPickInfo();
     loadAuctions(); loadRecords(true);
   }).catch(function () {}).then(function () { $('a-submit').disabled = false; });
@@ -1006,11 +1024,15 @@ function manageCard(a) {
         '<span class="row"><span class="title">' + esc(a.itemName) + '</span><span class="badge ' + (active ? 'active' : 'closed') + '">' + esc(a.status) + '</span></span>' +
         '<span class="price">' + won(a.price) + '</span></div>' +
       (a.memo ? '<div class="muted">' + esc(a.memo) + '</div>' : '') +
-      (a.itemJob ? '<div><span class="badge jobtag">🎯 ' + esc(a.itemJob) + ' 전용</span></div>' : '') +
+      '<div class="row">' + jobBadge(a) + relaxBadges(a) + '</div>' +
       (a.winner ? '<div class="hand" style="font-size:18px">🏆 낙찰: ' + esc(a.winner) + '</div>' : '') +
       topBox(a) +
       (a.declined.length ? '<div><div class="muted" style="margin-bottom:4px">불참 ' + a.declined.length + '명</div>' + nameChips(a.declined, null, a.jobs) + '</div>' : '') +
       (a.absent && a.absent.length ? '<div><div class="muted" style="margin-bottom:4px">🚫 레이드 미참여 ' + a.absent.length + '명</div><div class="chips">' + a.absent.map(function (n) { return '<span class="chip out">' + esc(n) + '</span>'; }).join('') + '</div></div>' : '') +
+      (active ? '<div class="row relaxrow"><span class="muted">경매중 바꾸기</span>' +
+        '<button class="sm" onclick="changePrice(\'' + a.id + '\')">💰 가격 변경</button>' +
+        '<button class="sm' + (a.ignoreJob ? ' primary' : '') + '" onclick="toggleRelax(\'' + a.id + '\', \'job\')">🔓 직업 제한 무시 ' + (a.ignoreJob ? '켜짐' : '꺼짐') + '</button>' +
+        '<button class="sm' + (a.ignoreOptout ? ' primary' : '') + '" onclick="toggleRelax(\'' + a.id + '\', \'opt\')">🔓 안 받을 템 무시 ' + (a.ignoreOptout ? '켜짐' : '꺼짐') + '</button></div>' : '') +
       '<div class="row">' +
         (active ? '<label style="margin:0;white-space:nowrap">낙찰자</label><select class="grow" id="w-' + a.id + '">' + opts + '</select>' +
                   '<button class="sm primary" onclick="closeAuction(\'' + a.id + '\', this)">마감</button>'
@@ -1019,6 +1041,34 @@ function manageCard(a) {
       '</div>' +
       '<div class="muted">등록 ' + fmtDate(a.createdAt) + ' · ' + esc(a.createdBy) + (a.closedAt ? ' · 마감 ' + fmtDate(a.closedAt) : '') + '</div>' +
     '</div>';
+}
+
+// 직업 / 입찰 제한 해제 배지 (경매 화면·관리 화면 공용)
+function jobBadge(a) {
+  if (a.ignoreJob) return '<span class="badge relax">🔓 누구나 입찰' + (a.itemJob ? ' (' + esc(a.itemJob) + ' 직업 제한 해제)' : '') + '</span>';
+  return a.itemJob ? '<span class="badge jobtag">🎯 ' + esc(a.itemJob) + ' 전용</span>' : '<span class="badge">공용</span>';
+}
+function relaxBadges(a) { return a.ignoreOptout ? '<span class="badge relax">🔓 안 받을 템 무시</span>' : ''; }
+function findAuction(id) { return state.auctions.filter(function (x) { return x.id === id; })[0]; }
+function changePrice(id) {
+  var a = findAuction(id); if (!a) return;
+  var v = prompt('"' + a.itemName + '" 경매 가격을 얼마로 바꿀까냥? (지금 ' + won(a.price) + ')', a.price);
+  if (v == null) return;
+  v = String(v).replace(/[,\s]/g, '');
+  if (v === '' || isNaN(Number(v)) || Number(v) < 0) return toast('가격을 숫자로 입력하라냥', true);
+  if (Number(v) === a.price) return toast('가격이 그대로다냥', true);
+  call('updateAuction', { id: id, price: Number(v) }).then(function () {
+    toast('가격을 ' + won(Number(v)) + '(으)로 바꿨다냥'); loadAuctions(); loadRecords(true);
+  }).catch(function () {});
+}
+function toggleRelax(id, kind) {
+  var a = findAuction(id); if (!a) return;
+  var key = kind === 'job' ? 'ignoreJob' : 'ignoreOptout', on = !a[key];
+  var label = kind === 'job' ? '직업 제한 무시' : '안 받을 템 무시';
+  var why = kind === 'job' ? '다른 직업 냥이도 입찰할 수 있게 된다냥.' : '안 받을 템으로 지정한 냥이도 입찰할 수 있게 된다냥.';
+  if (!confirm('"' + a.itemName + '" 경매의 ' + label + '를 ' + (on ? '켤까냥?\n' + why : '끌까냥?\n이미 입찰한 냥이 중 조건에 안 맞는 냥이는 순위에서 빠진다냥.'))) return;
+  var payload = { id: id }; payload[key] = on;
+  call('updateAuction', payload).then(function () { toast(label + ' ' + (on ? '켰다냥' : '껐다냥')); loadAuctions(); }).catch(function () {});
 }
 
 // 마감 = 고른 낙찰자로 결과 저장 + 마감 (낙찰이력 기록, 회차 검사까지 서버에서 한 번에)
@@ -1581,7 +1631,7 @@ state.records = null; state.recAuctions = []; state.recFilter = 'all'; state.rec
 var REC_PAGE_SIZE = 10, REC_PAGE_GROUP = 10;
 function loadRecords(silent) {
   return call('listRecords', {}, silent).then(function (d) {
-    state.records = sortItems(d.items); state.recAuctions = d.auctions;
+    state.records = sortItems(d.items); state.recAuctions = d.auctions; state.recMembers = d.members || [];
     if (state.tab === 'rotation') renderRecords();
     if (state.tab === 'manage') renderPickInfo();
   }).catch(function () {});
