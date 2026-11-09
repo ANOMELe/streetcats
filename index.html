@@ -217,6 +217,16 @@
     animation: load 1s infinite; z-index: 100; }
   @keyframes load { 0% { transform: scaleX(0); transform-origin: left; } 50% { transform: scaleX(1); transform-origin: left; }
     51% { transform-origin: right; } 100% { transform: scaleX(0); transform-origin: right; } }
+  /* 시트에 저장하는 동안 화면을 덮는 팝업 */
+  #saving { position: fixed; inset: 0; z-index: 120; background: rgba(59,42,32,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  #saving.hidden { display: none; }
+  #saving .box { background: var(--panel); border: 3px solid var(--ink); border-radius: 22px; box-shadow: 0 5px 0 var(--ink);
+    padding: 20px 26px; text-align: center; max-width: 320px; font-family: var(--hand); }
+  #saving .ic { font-size: 40px; display: inline-block; animation: savebob 1s ease-in-out infinite; }
+  #saving.done .ic { animation: none; }
+  #saving .t { font-size: 21px; margin: 4px 0; }
+  #saving .s { font: 14px/1.5 "Nanum Gothic", sans-serif; color: var(--muted); }
+  @keyframes savebob { 50% { transform: translateY(-6px) rotate(-8deg); } }
   details summary { cursor: pointer; font: 18px var(--hand); }
   details[open] summary { margin-bottom: 6px; }
 
@@ -298,6 +308,7 @@
 <body>
 <div id="loading" class="hidden"></div>
 <div id="toast" class="hidden"></div>
+<div id="saving" class="hidden" role="alertdialog" aria-live="assertive"><div class="box"><div class="ic">💾</div><div class="t">시트에 저장 중이다냥…</div><div class="s">저장이 끝날 때까지 창을 닫거나<br>다른 앱으로 나가지 마라냥!</div></div></div>
 <div id="modal" class="hidden" onclick="if (event.target === this) closeModal()"><div class="card"><button class="sm close" onclick="closeModal()">닫기</button><div id="modal-body"></div></div></div>
 <div id="decor"></div>
 
@@ -686,19 +697,58 @@ function toast(msg, isErr) {
 }
 
 var pending = 0;
+// 읽기만 하는 요청. 나머지는 모두 시트에 쓰는 요청이라 저장 팝업을 띄움
+var READ_ACTIONS = { login: 1, logout: 1, me: 1, jobs: 1, listAuctions: 1, listItems: 1, listMembers: 1, listRecords: 1,
+  listRotation: 1, memberItems: 1, myItems: 1, optoutMatrix: 1 };
+var saving = 0, savingTimer;
+function savingStart() {
+  saving++; clearTimeout(savingTimer);
+  var el = $('saving'); el.className = '';
+  el.querySelector('.ic').textContent = '💾';
+  el.querySelector('.t').textContent = '시트에 저장 중이다냥…';
+  el.querySelector('.s').innerHTML = '저장이 끝날 때까지 창을 닫거나<br>다른 앱으로 나가지 마라냥!';
+}
+function savingEnd(ok) {
+  if (--saving > 0) return;
+  saving = 0;
+  var el = $('saving');
+  if (!ok) { el.className = 'hidden'; return; } // 실패는 토스트로 알림
+  el.className = 'done';
+  el.querySelector('.ic').textContent = '✅';
+  el.querySelector('.t').textContent = '저장 완료다냥!';
+  el.querySelector('.s').textContent = '이제 나가도 된다냥.';
+  savingTimer = setTimeout(function () { if (!saving) el.className = 'hidden'; }, 900);
+}
+var CALL_TIMEOUT = 60000;
 function call(action, payload, silent) {
-  if (!silent) { pending++; $('loading').classList.remove('hidden'); }
+  var writes = !READ_ACTIONS[action];
+  if (writes) savingStart();
+  else if (!silent) { pending++; $('loading').classList.remove('hidden'); }
   return new Promise(function (resolve, reject) {
-    function done() { if (!silent && --pending <= 0) { pending = 0; $('loading').classList.add('hidden'); } }
+    var finished = false;
+    function done(ok) {
+      if (finished) return false;
+      finished = true; clearTimeout(timer);
+      if (writes) savingEnd(ok);
+      else if (!silent && --pending <= 0) { pending = 0; $('loading').classList.add('hidden'); }
+      return true;
+    }
+    // 응답이 너무 늦으면 팝업을 풀고, 저장됐는지 새로고침해서 확인하라고 알림
+    var timer = setTimeout(function () {
+      if (!done(false)) return;
+      var msg = writes ? '서버 응답이 너무 늦다냥. 저장됐는지 새로고침해서 확인해라냥.' : '서버 응답이 너무 늦다냥. 잠시 뒤 다시 해라냥.';
+      if (writes || !silent) toast(msg, true);
+      reject(new Error('TIMEOUT'));
+    }, CALL_TIMEOUT);
     function onRes(res) {
-      done();
+      if (!done(!!(res && res.ok))) return;
       if (res && res.ok) return resolve(res.data);
       var msg = (res && res.error) || '오류가 발생했습니다.';
       if (msg === 'SESSION_EXPIRED') { sessionExpired(); return reject(new Error(msg)); }
       if (!silent) toast(msg, true);
       reject(new Error(msg));
     }
-    function onErr(err) { done(); if (!silent) toast('서버 연결 실패: ' + (err && err.message || err), true); reject(err); }
+    function onErr(err) { if (!done(false)) return; if (!silent || writes) toast('서버 연결 실패: ' + (err && err.message || err), true); reject(err); }
     if (window.google && google.script && google.script.run) {
       // Apps Script 웹앱 주소로 열었을 때
       google.script.run.withSuccessHandler(onRes).withFailureHandler(onErr).api(action, state.token, payload || {});
@@ -1655,7 +1705,7 @@ function dropEdits() {
   if (optUI.me) optUI.me.edits = {};
   if (optUI.modal) optUI.modal.edits = {};
 }
-window.addEventListener('beforeunload', function (e) { if (state.user && pendingEdits()) { e.preventDefault(); e.returnValue = ''; } });
+window.addEventListener('beforeunload', function (e) { if (saving > 0 || (state.user && pendingEdits())) { e.preventDefault(); e.returnValue = ''; } });
 
 /* ---------- 낙찰 기록 (길마/부길마) ---------- */
 // state.records = 아이템별 기록, state.recAuctions = 경매 목록(최근순), state.recRound[아이템ID] = 보고 있는 회차(없으면 진행중 회차)
