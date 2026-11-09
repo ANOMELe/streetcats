@@ -310,8 +310,9 @@
       <div class="login-title">로그인이냥<span class="paw">🐾</span></div>
       <p class="login-desc">길마가 등록해준 <b>닉네임</b>으로 들어와라냥.<br>처음 왔으면 비밀번호는 비워두고 눌러라냥!</p>
       <form id="f-login">
-        <label>닉네임</label><input id="l-nick" autocomplete="username" required placeholder="게임 닉네임">
-        <label>비밀번호</label><input id="l-pw" type="password" autocomplete="current-password" placeholder="처음이면 비워두라냥">
+        <label>닉네임</label><input id="l-nick" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required placeholder="게임 닉네임">
+        <!-- iOS: 폼에 password 칸이 있으면 바로 앞 칸을 '아이디'로 보고 영문 키보드만 띄움 → 비번 칸은 눌렀을 때만 password로 바꿈 -->
+        <label>비밀번호</label><input id="l-pw" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="처음이면 비워두라냥">
         <button class="primary full big" type="submit">들어가기냥</button>
       </form>
     </div>
@@ -726,6 +727,11 @@ $('f-login').addEventListener('submit', function (e) {
   }).catch(function () {});
 });
 
+/* iOS 한글 입력: 비번 칸이 password일 때 닉네임 칸이 영문 키보드로 고정됨.
+   비번 칸에 들어갈 때만 password로, 비어 있는 채로 나가면 text로 되돌림. */
+$('l-pw').addEventListener('focus', function () { this.type = 'password'; });
+$('l-pw').addEventListener('blur', function () { if (!this.value) this.type = 'text'; });
+
 $('f-setpw').addEventListener('submit', function (e) {
   e.preventDefault();
   if ($('s-pw').value !== $('s-pw2').value) return toast('비밀번호 확인이 일치하지 않습니다.', true);
@@ -735,7 +741,7 @@ $('f-setpw').addEventListener('submit', function (e) {
 
 function onLogin(r) {
   state.token = r.token; state.user = r.user; store(TOKEN_KEY, r.token);
-  $('l-pw').value = '';
+  $('l-pw').value = ''; $('l-pw').type = 'text';
   startApp();
 }
 
