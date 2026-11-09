@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+  <script>
+  (function () {
+    var ua = navigator.userAgent;
+    if (!/KAKAOTALK/i.test(ua)) return;
+
+    // 1) 기본 브라우저로 보냄 (안드로이드·iOS 공통)
+    location.href = 'kakaotalk://web/openExternal?url=' +
+      encodeURIComponent(location.href);
+
+    // 2) 안 넘어가면 안내 띄움
+    setTimeout(function () {
+      if (document.visibilityState === 'visible') {
+        document.body.insertAdjacentHTML('afterbegin',
+          '<div style="padding:16px;background:#ffeb00;text-align:center">' +
+          '오른쪽 아래 ⋯ 버튼 → "다른 브라우저로 열기" 눌러 주세요' +
+          '</div>');
+      }
+    }, 1500);
+  })();
+</script>
 <base target="_top">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
