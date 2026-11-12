@@ -321,7 +321,8 @@
   .notice-body .day.hot span { font-weight: 800; }
   .home-diary #home-diary:not(.nodiary) { margin-top: 12px; white-space: pre-wrap; line-height: 28px; padding: 2px 14px 6px; border-radius: 14px;
     background: #fff repeating-linear-gradient(transparent 0 27px, #f1dfba 27px 28px); border: 2px solid var(--line); font-size: 15px; }
-  .news-top { display: block; margin-top: 12px; padding: 12px 14px; border-radius: 16px; background: #fff3dc; border: 3px solid var(--ink);
+  .news-sec + .news-sec { margin-top: 8px; padding-top: 4px; border-top: 2px dashed var(--line); }
+  .news-top { display: block; margin-top: 8px; padding: 12px 14px; border-radius: 16px; background: #fff3dc; border: 3px solid var(--ink);
     box-shadow: 0 3px 0 var(--ink); color: var(--text); text-decoration: none; }
   .news-top:hover { background: #ffe9c2; }
   .news-top .tt { font: 18px var(--hand); display: block; margin: 4px 0; }
@@ -429,10 +430,7 @@
             <div id="home-diary"></div>
           </div>
           <div class="card home-news">
-            <div class="row" style="justify-content:space-between">
-              <h2 style="margin:0">📰 게임 새소식</h2>
-              <a class="muted" href="https://zeus.com2us.com/news/update" target="_blank" rel="noopener">공식 홈페이지 →</a>
-            </div>
+            <h2 style="margin:0">📰 게임 소식</h2>
             <div id="home-news"></div>
           </div>
         </div>
@@ -1006,19 +1004,29 @@ function renderHome() {
     var el = $('home-diary'); el.className = ''; el.textContent = body;
   }
 
-  var news = (d.news && d.news.items) || [];
-  if (!news.length) { $('home-news').innerHTML = emptyState('새소식을 아직 못 가져왔다냥', 'gray'); return; }
-  var top = news[0];
+  var nd = d.news || {};
+  var updates = nd.items || [], notices = nd.notices || [];
+  if (!updates.length && !notices.length) { $('home-news').innerHTML = emptyState('게임 소식을 아직 못 가져왔다냥', 'gray'); return; }
   $('home-news').innerHTML =
+    newsSection('🔧 업데이트', 'https://zeus.com2us.com/news/update', updates) +
+    newsSection('📢 공지사항', 'https://zeus.com2us.com/news/notice', notices) +
+    (nd.at ? '<p class="muted" style="margin:10px 0 0">길냥이가 ' + esc(nd.at.slice(5)) + '에 가져온 소식이다냥</p>' : '');
+}
+/** 게시판 한 칸: 가장 최근 글은 크게 강조, 나머지는 한 줄씩 */
+function newsSection(title, boardUrl, list) {
+  if (!list.length) return '';
+  var top = list[0];
+  return '<div class="news-sec"><div class="row" style="justify-content:space-between;margin-top:12px">' +
+      '<span class="hand" style="font-size:17px">' + title + '</span>' +
+      '<a class="muted" href="' + boardUrl + '" target="_blank" rel="noopener">전체 보기 →</a></div>' +
     '<a class="news-top" href="' + esc(top.url) + '" target="_blank" rel="noopener">' +
       '<span class="news-new">NEW</span> <span class="sm">' + esc(fmtDay(top.date)) + ' 올라옴</span>' +
       '<span class="tt">' + esc(top.title) + '</span>' +
       (top.summary ? '<span class="sm">' + esc(top.summary) + '</span>' : '') +
       '<div class="sm" style="margin-top:6px;font-weight:800;color:var(--text)">자세히 보러 가기 →</div></a>' +
-    '<div style="margin-top:8px">' + news.slice(1).map(function (x) {
+    '<div style="margin-top:6px">' + list.slice(1).map(function (x) {
       return '<a class="news-item" href="' + esc(x.url) + '" target="_blank" rel="noopener"><span class="t">' + esc(x.title) + '</span><span class="d">' + esc((x.date || '').slice(5).replace('-', '/')) + '</span></a>';
-    }).join('') + '</div>' +
-    (d.news.at ? '<p class="muted" style="margin:8px 0 0">길냥이가 ' + esc(d.news.at.slice(5)) + '에 가져온 소식이다냥</p>' : '');
+    }).join('') + '</div></div>';
 }
 function editNotice() {
   var cur = (homeData && homeData.notice && homeData.notice.text) || '';
