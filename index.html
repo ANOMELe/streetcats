@@ -303,6 +303,21 @@
     .deco.side { display: none; }
     .mx td.memo input { width: 96px; }
   }
+  /* ---------- 길냥이봇 ---------- */
+  .bot-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; border: 2px solid var(--ink); vertical-align: -1px; }
+  .bot-dot.on { background: var(--ok); } .bot-dot.off { background: var(--no); }
+  .bot-req { border-top: 2px dashed var(--line); padding: 8px 0; }
+  .bot-req:first-child { border-top: 0; }
+  .bot-req .reply { white-space: pre-wrap; background: #fff; border: 2px solid var(--line); border-radius: 12px; padding: 6px 10px; margin-top: 6px; font-size: 13px; }
+  .badge.wait { background: #fff3c4; } .badge.done { background: var(--ok); color: #fff; } .badge.fail { background: var(--no); color: #fff; }
+  .bot-day { font: 15px var(--hand); margin: 10px 0 4px; }
+  .bot-job { display: flex; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .bot-job .t { font-weight: 800; min-width: 48px; }
+  .bot-job .k { font-size: 12px; white-space: nowrap; }
+  .bot-cols { display: flex; flex-wrap: wrap; gap: 0 20px; align-items: flex-start; }
+  .bot-cols > .card { flex: 1 1 340px; min-width: 0; }
+  .bot-req .spacer { flex: 1; }
+  .bot-job .l { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -410,6 +425,42 @@
       </div>
       <div id="manage-list" class="cards-grid"></div>
       <details class="card" style="margin-top:12px"><summary>마감된 경매 (다시 진행 · 삭제)</summary><div id="manage-closed" class="cards-grid" style="margin-top:12px"></div></details>
+    </div>
+
+    <!-- 길마/부길마: 길냥이봇 알람 -->
+    <div id="t-bot" class="tab hidden">
+      <div class="hero">
+        <div class="cat" data-cat="orange" data-face="open"></div>
+        <div><h2>길냥이봇 알람 관리다냥</h2><p>여기서 등록하면 길냥이가 20초 안에 가져가서 카톡방 알람으로 등록한다냥. 알람은 정한 시각 5분 전에 @모두로 울린다냥.</p></div>
+        <div class="spacer"></div>
+        <button class="sm" onclick="loadBot()">새로고침</button>
+      </div>
+      <div class="card" id="bot-status"></div>
+      <div class="bot-cols">
+        <div class="card">
+          <h2>알람 등록</h2>
+          <label>종류</label>
+          <select id="b-type" onchange="renderBotForm()">
+            <option value="once">1회 알람 (날짜·시각 한 번)</option>
+            <option value="weekly">고정알람 (매주 같은 요일·시각)</option>
+            <option value="boss">필드보스 (12시간·8시간 반복)</option>
+            <option value="abyss">심연 (매일 반복, 3개까지)</option>
+          </select>
+          <div id="b-form"></div>
+          <div class="muted" style="margin-top:10px">보낼 명령: <b id="b-preview">-</b></div>
+          <button class="primary big" style="width:100%;margin-top:12px" onclick="sendBot()">길냥이한테 보내기냥!</button>
+        </div>
+        <div class="card">
+          <div class="row" style="justify-content:space-between">
+            <h2 style="margin:0">예정 알람</h2><span class="muted" id="bot-at"></span>
+          </div>
+          <div id="bot-jobs" style="margin-top:10px"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>보낸 요청</h2>
+        <div id="bot-reqs"></div>
+      </div>
     </div>
 
     <!-- 길마: 낙찰 기록 -->
@@ -699,7 +750,7 @@ function toast(msg, isErr) {
 var pending = 0;
 // 읽기만 하는 요청. 나머지는 모두 시트에 쓰는 요청이라 저장 팝업을 띄움
 var READ_ACTIONS = { login: 1, logout: 1, me: 1, jobs: 1, listAuctions: 1, listItems: 1, listMembers: 1, listRecords: 1,
-  listRotation: 1, memberItems: 1, myItems: 1, optoutMatrix: 1 };
+  listRotation: 1, memberItems: 1, myItems: 1, optoutMatrix: 1, botStatus: 1, botKey: 1 };
 var saving = 0, savingTimer;
 function savingStart() {
   saving++; clearTimeout(savingTimer);
@@ -813,7 +864,7 @@ function startApp() {
   $('me-role').textContent = state.user.role;
   $('me-role').className = 'badge' + roleClass(state.user.role);
   var tabs = [['auction', '🐾 경매 참가']];
-  if (isMaster) tabs.push(['manage', '📢 경매 관리'], ['rotation', '📜 낙찰 기록'], ['items', '📦 아이템 창고'], ['members', '🐱 길드 냥이들']);
+  if (isMaster) tabs.push(['manage', '📢 경매 관리'], ['rotation', '📜 낙찰 기록'], ['items', '📦 아이템 창고'], ['members', '🐱 길드 냥이들'], ['bot', '🤖 길냥이봇']);
   tabs.push(['me', '🏠 내 정보']);
   $('tabs').innerHTML = tabs.map(function (t) {
     return '<button data-tab="' + t[0] + '">' + t[1] + '</button>'; }).join('');
@@ -825,6 +876,7 @@ function startApp() {
   state.timer = setInterval(function () {
     if (document.hidden) return;
     if (state.tab === 'auction' || state.tab === 'manage') loadAuctions(true);
+    if (state.tab === 'bot') loadBot(true);
   }, 20000);
 }
 function stopTimer() { if (state.timer) clearInterval(state.timer); state.timer = null; }
@@ -843,6 +895,146 @@ function setTab(tab) {
   if (tab === 'members') setMemberSub(state.memberSub || load('guildMemberSub') || 'list', true);
   if (tab === 'rotation') loadRecords();
   if (tab === 'me') loadMyOptouts();
+  if (tab === 'bot') { renderBotForm(); loadBot(); }
+}
+
+/* ---------- 길냥이봇 (카톡 알림봇) ---------- */
+var BOT_DAYS = '월화수목금토일';
+function botTime(v) { // 'HH:MM' → '오후 9시 30분' (봇이 오전/오후를 되묻지 않게)
+  if (!v) return '';
+  var h = +v.split(':')[0], m = +v.split(':')[1];
+  return (h < 12 ? '오전 ' : '오후 ') + (h % 12 || 12) + '시' + (m ? ' ' + m + '분' : '');
+}
+function botTime24(v) { var h = +v.split(':')[0], m = +v.split(':')[1]; return h + '시' + (m ? ' ' + m + '분' : ''); }
+function todayStr(offset) {
+  var d = new Date(Date.now() + (offset || 0) * 86400000);
+  return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+}
+function renderBotForm() {
+  var t = $('b-type').value, h = '';
+  if (t === 'once') {
+    h = '<div class="row"><div class="grow"><label>날짜</label><input id="b-date" type="date" value="' + todayStr() + '"></div>' +
+        '<div class="grow"><label>시각 (이 시각 5분 전에 울림)</label><input id="b-time" type="time" value="21:00"></div></div>' +
+        '<label>내용</label><input id="b-msg" placeholder="예: 침공 후 길드레이드 항아리 이어서합니다">';
+  } else if (t === 'weekly') {
+    h = '<div class="row"><div class="grow"><label>요일</label><select id="b-wd">' +
+        BOT_DAYS.split('').map(function (c, i) { return '<option value="' + i + '"' + (i === 3 ? ' selected' : '') + '>' + c + '요일</option>'; }).join('') +
+        '</select></div><div class="grow"><label>시각</label><input id="b-time" type="time" value="21:00"></div></div>' +
+        '<label>내용 (길냥이가 고양이 말투로 바꿔서 저장한다냥)</label><input id="b-msg" placeholder="예: 길드레이드">' +
+        '<p class="muted" style="margin:6px 0 0">당일 10시·13시·18시(정한 시각보다 이를 때만)와 5분 전에 알린다냥. 같은 요일·시각으로 다시 보내면 바뀐다냥.</p>';
+  } else if (t === 'boss') {
+    h = '<div class="row"><div class="grow"><label>보스</label><select id="b-period"><option value="12">필드보스12 (12시간마다)</option><option value="8">필드보스8 (8시간마다)</option></select></div>' +
+        '<div class="grow"><label>할 일</label><select id="b-bact" onchange="renderBossAct()"><option value="set">등록 (남은 시간)</option><option value="adj">다음 알림 조정</option><option value="off">끄기</option></select></div></div>' +
+        '<div id="b-boss"></div>';
+  } else {
+    h = '<label>시각 (매일, 비우면 그 칸은 안 씀)</label><div class="row">' +
+        [0, 12, 18].map(function (v, i) { return '<input id="b-ab' + i + '" class="grow" type="time" value="' + ('0' + v).slice(-2) + ':00">'; }).join('') + '</div>' +
+        '<label style="display:flex;gap:6px;align-items:center;margin-top:10px"><input id="b-aboff" type="checkbox" style="width:auto"> 심연 알림 끄기</label>' +
+        '<p class="muted" style="margin:6px 0 0">각 시각 5분 전에 알린다냥. 새로 보내면 예전 심연 시각은 지워진다냥.</p>';
+  }
+  $('b-form').innerHTML = h;
+  if (t === 'boss') renderBossAct();
+  $('b-form').querySelectorAll('input,select').forEach(function (el) { el.addEventListener('input', botPreview); el.addEventListener('change', botPreview); });
+  botPreview();
+}
+function renderBossAct() {
+  var a = $('b-bact').value, h = '';
+  if (a === 'set') h = '<label>게임에 보이는 등장까지 남은 시간</label><div class="row"><input id="b-bh" class="grow" type="number" min="0" max="23" value="2"><span>시간</span><input id="b-bm" class="grow" type="number" min="0" max="59" value="0"><span>분</span></div>' +
+                      '<p class="muted" style="margin:6px 0 0">등장 5분 전에 알리고 그 뒤로 계속 반복한다냥. 다시 등록하면 바뀐다냥.</p>';
+  if (a === 'adj') h = '<label>다음 알림을 몇 분 옮길까 (늦추면 +, 당기면 -)</label><input id="b-adj" type="number" value="3">';
+  $('b-boss').innerHTML = h;
+  $('b-boss').querySelectorAll('input').forEach(function (el) { el.addEventListener('input', botPreview); });
+  botPreview();
+}
+function botCommand() {
+  var t = $('b-type').value;
+  if (t === 'once') {
+    var msg = $('b-msg').value.trim();
+    if (!$('b-date').value || !$('b-time').value) return '';
+    return '!알람 ' + $('b-date').value + ' ' + botTime($('b-time').value) + (msg ? ' ' + msg : '');
+  }
+  if (t === 'weekly') {
+    var wm = $('b-msg').value.trim();
+    if (!$('b-time').value || !wm) return '';
+    return '!고정알람 ' + BOT_DAYS[+$('b-wd').value] + ' ' + botTime($('b-time').value) + ' ' + wm;
+  }
+  if (t === 'boss') {
+    var p = '!필드보스' + $('b-period').value + ' ', a = $('b-bact').value;
+    if (a === 'off') return p + '끄기';
+    if (a === 'adj') { var n = parseInt($('b-adj').value, 10); return n ? p + (n > 0 ? '+' : '-') + Math.abs(n) + '분' : ''; }
+    var bh = parseInt($('b-bh').value || '0', 10), bm = parseInt($('b-bm').value || '0', 10);
+    if (!(bh * 60 + bm > 0)) return '';
+    return p + (bh ? bh + '시' + (bm ? ' ' + bm + '분' : '') : bm + '분');
+  }
+  if ($('b-aboff').checked) return '!심연 끄기';
+  var ts = [0, 1, 2].map(function (i) { return $('b-ab' + i).value; }).filter(Boolean);
+  return ts.length ? '!심연 ' + ts.map(botTime24).join(' ') : '';
+}
+function botPreview() { $('b-preview').textContent = botCommand() || '(칸을 채워라냥)'; }
+function sendBot() {
+  var cmd = botCommand();
+  if (!cmd) return toast('칸을 다 채워라냥.', true);
+  call('botRequest', { command: cmd }).then(function () { toast('보냈다냥! 20초쯤 뒤에 결과가 보인다냥.'); loadBot(true); }).catch(function () {});
+}
+function cancelBot(sid, label) {
+  if (!confirm('이 일정을 취소할까냥?\n\n' + label + '\n\n(반복 알람이면 반복 전체가 꺼진다냥)')) return;
+  call('botCancel', { scheduleId: sid, label: label }).then(function () { toast('취소 요청을 보냈다냥.'); loadBot(true); }).catch(function () {});
+}
+function loadBot(silent) {
+  return call('botStatus', {}, silent).then(renderBot).catch(function () {});
+}
+function botAgo(sec) { return sec < 60 ? sec + '초 전' : sec < 3600 ? Math.round(sec / 60) + '분 전' : Math.round(sec / 3600) + '시간 전'; }
+function renderBot(st) {
+  var on = st.seenAgo != null && st.seenAgo < 90;
+  var html = '<div class="row" style="justify-content:space-between">' +
+    '<span class="hand" style="font-size:18px"><span class="bot-dot ' + (on ? 'on' : 'off') + '"></span>' +
+    (on ? '길냥이봇 연결됨 (' + botAgo(st.seenAgo) + ')' : st.seenAgo == null ? '길냥이봇이 아직 한 번도 안 왔다냥' : '길냥이봇 연결 끊김 (마지막 ' + botAgo(st.seenAgo) + ')') + '</span>';
+  if (state.user.role === '길마') html += '<button class="sm" onclick="showBotKey()">🔑 연결 키</button>';
+  html += '</div>';
+  if (!st.hasKey) html += '<p class="muted" style="margin:6px 0 0">아직 연결 키가 없다냥. 길마가 🔑 연결 키를 눌러 만들고 미니 PC에 넣어야 한다냥.</p>';
+  $('bot-status').innerHTML = html;
+
+  var jobs = (st.state && st.state.jobs) || [];
+  $('bot-at').textContent = st.state ? '봇 기준 ' + st.state.at : '';
+  if (!jobs.length) $('bot-jobs').innerHTML = emptyState('예정된 알람이 없다냥', 'gray');
+  else {
+    var day = '', out = '';
+    jobs.forEach(function (j) {
+      var d = j.fireAt.slice(0, 10);
+      if (d !== day) {
+        day = d; var dt = new Date(d + 'T00:00:00');
+        out += '<div class="bot-day">' + (dt.getMonth() + 1) + '월 ' + dt.getDate() + '일 ' + BOT_DAYS[(dt.getDay() + 6) % 7] + '요일</div>';
+      }
+      out += '<div class="bot-job"><span class="t">' + j.fireAt.slice(11) + '</span><span class="badge k">' + esc(j.kind) + '</span>' +
+        '<span class="l" title="' + esc(j.raw) + '">' + esc(j.label) + '</span>' +
+        '<button class="sm no" onclick="cancelBot(' + j.scheduleId + ', ' + esc(JSON.stringify(j.raw || j.label)) + ')">취소</button></div>';
+    });
+    if (st.state.truncated) out += '<p class="muted">더 있다냥 (가까운 것만 보여준다냥)</p>';
+    $('bot-jobs').innerHTML = out;
+  }
+
+  var reqs = st.requests || [];
+  $('bot-reqs').innerHTML = !reqs.length ? '<p class="muted">아직 보낸 요청이 없다냥.</p>' : reqs.map(function (r) {
+    var cls = r.status === '완료' ? 'done' : r.status === '실패' ? 'fail' : 'wait';
+    return '<div class="bot-req"><div class="row" style="gap:8px"><span class="badge ' + cls + '">' + esc(r.status || '대기') + '</span>' +
+      '<b>' + esc(r.command || r.desc) + '</b><span class="spacer"></span><span class="muted">' + esc(r.requester) + ' · ' + fmtDate(r.at) + '</span></div>' +
+      (r.reply ? '<div class="reply">' + esc(r.reply) + '</div>' : '') + '</div>';
+  }).join('');
+}
+function showBotKey(regenerate) {
+  if (regenerate && !confirm('새 키를 만들면 예전 키는 못 쓴다냥. 미니 PC에도 새 키를 다시 넣어야 한다냥. 만들까냥?')) return;
+  call('botKey', { regenerate: !!regenerate }).then(function (r) {
+    $('modal-body').innerHTML = '<h2 style="margin-right:60px">🔑 길냥이봇 연결 키</h2>' +
+      '<p class="muted">미니 PC 터미널에서 <b>sudo bash /opt/gilcat/deploy/linux/set_web_key.sh</b> 를 실행하고 이 키를 붙여넣어라냥. 다른 사람에게 보여주지 마라냥!</p>' +
+      '<input id="bot-key" readonly value="' + esc(r.key) + '" onclick="this.select()">' +
+      '<div class="row" style="margin-top:12px"><button class="primary grow" onclick="copyBotKey()">복사</button><button class="no" onclick="showBotKey(true)">새로 만들기</button></div>';
+    $('modal').classList.remove('hidden');
+  }).catch(function () {});
+}
+function copyBotKey() {
+  var el = $('bot-key'); el.select();
+  (navigator.clipboard ? navigator.clipboard.writeText(el.value) : Promise.reject()).then(function () { toast('복사했다냥!'); },
+    function () { document.execCommand('copy'); toast('복사했다냥!'); });
 }
 
 /* ---------- 경매 (길드원) ---------- */
