@@ -303,6 +303,36 @@
     .deco.side { display: none; }
     .mx td.memo input { width: 96px; }
   }
+  /* ---------- 앞마당 ---------- */
+  .home-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 0 20px; align-items: start; }
+  .home-side { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; min-width: 0; }
+  @media (max-width: 860px) { .home-grid { grid-template-columns: minmax(0, 1fr); } }
+  .notice-body { margin-top: 12px; line-height: 1.7; }
+  .notice-body .ln { min-height: 1.2em; overflow-wrap: anywhere; }
+  .notice-body .gap { height: 10px; }
+  .notice-body .title { font: 19px var(--hand); margin-bottom: 4px; }
+  .notice-body .rule { font-weight: 800; margin-top: 6px; }
+  .notice-body .rule::before { content: '🐾 '; }
+  .notice-body .sub { padding-left: 22px; color: var(--text); }
+  .notice-body .day { display: flex; gap: 10px; align-items: center; padding: 3px 0; }
+  .notice-body .day b { font: 15px var(--hand); display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+    background: #fff3c4; border: 2px solid var(--ink); flex: none; }
+  .notice-body .day.hot b { background: var(--accent); }
+  .notice-body .day.hot span { font-weight: 800; }
+  .home-diary #home-diary:not(.nodiary) { margin-top: 12px; white-space: pre-wrap; line-height: 28px; padding: 2px 14px 6px; border-radius: 14px;
+    background: #fff repeating-linear-gradient(transparent 0 27px, #f1dfba 27px 28px); border: 2px solid var(--line); font-size: 15px; }
+  .news-top { display: block; margin-top: 12px; padding: 12px 14px; border-radius: 16px; background: #fff3dc; border: 3px solid var(--ink);
+    box-shadow: 0 3px 0 var(--ink); color: var(--text); text-decoration: none; }
+  .news-top:hover { background: #ffe9c2; }
+  .news-top .tt { font: 18px var(--hand); display: block; margin: 4px 0; }
+  .news-top .sm { font-size: 13px; color: var(--muted); }
+  .news-new { display: inline-block; font: 12px var(--hand); background: var(--no); color: #fff; border-radius: 99px; padding: 1px 8px; border: 2px solid var(--ink); }
+  .news-item { display: flex; gap: 10px; align-items: baseline; padding: 8px 2px; border-bottom: 1px dashed var(--line); color: var(--text); text-decoration: none; }
+  .news-item:hover .t { text-decoration: underline; }
+  .news-item .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .news-item .d { font-size: 12px; color: var(--muted); flex: none; }
+  #notice-edit { width: 100%; min-height: 50vh; font: 14px/1.6 inherit; resize: vertical; }
+
   /* ---------- 길냥이봇 ---------- */
   .bot-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; border: 2px solid var(--ink); vertical-align: -1px; }
   .bot-dot.on { background: var(--ok); } .bot-dot.off { background: var(--no); }
@@ -373,6 +403,41 @@
       </div>
     </header>
     <nav class="tabs" id="tabs"></nav>
+
+    <!-- 모두: 앞마당 (로그인하면 처음 보이는 곳) -->
+    <div id="t-home" class="tab hidden">
+      <div class="hero">
+        <div class="cat" data-cat="orange" data-face="happy"></div>
+        <div><h2>길냥이집 앞마당이다냥</h2><p id="home-hello">오늘도 놀러 와줘서 고맙다냥!</p></div>
+        <div class="spacer"></div>
+        <button class="sm" onclick="loadHome()">새로고침</button>
+      </div>
+      <div class="home-grid">
+        <div class="card home-notice">
+          <div class="row" style="justify-content:space-between">
+            <h2 style="margin:0">📌 길드 공지</h2>
+            <button class="sm hidden" id="home-edit" onclick="editNotice()">✏️ 고치기</button>
+          </div>
+          <div id="home-notice" class="notice-body"></div>
+          <div class="muted" id="home-notice-by" style="margin-top:10px"></div>
+        </div>
+        <div class="home-side">
+          <div class="card home-diary">
+            <div class="row" style="justify-content:space-between">
+              <h2 style="margin:0">📔 길냥이 일기</h2><span class="muted" id="home-diary-date"></span>
+            </div>
+            <div id="home-diary"></div>
+          </div>
+          <div class="card home-news">
+            <div class="row" style="justify-content:space-between">
+              <h2 style="margin:0">📰 게임 새소식</h2>
+              <a class="muted" href="https://zeus.com2us.com/news/update" target="_blank" rel="noopener">공식 홈페이지 →</a>
+            </div>
+            <div id="home-news"></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 길드원: 경매 -->
     <div id="t-auction" class="tab">
@@ -750,7 +815,7 @@ function toast(msg, isErr) {
 var pending = 0;
 // 읽기만 하는 요청. 나머지는 모두 시트에 쓰는 요청이라 저장 팝업을 띄움
 var READ_ACTIONS = { login: 1, logout: 1, me: 1, jobs: 1, listAuctions: 1, listItems: 1, listMembers: 1, listRecords: 1,
-  listRotation: 1, memberItems: 1, myItems: 1, optoutMatrix: 1, botStatus: 1, botKey: 1 };
+  listRotation: 1, memberItems: 1, myItems: 1, optoutMatrix: 1, botStatus: 1, botKey: 1, welcome: 1 };
 var saving = 0, savingTimer;
 function savingStart() {
   saving++; clearTimeout(savingTimer);
@@ -863,15 +928,14 @@ function startApp() {
   renderMyJob();
   $('me-role').textContent = state.user.role;
   $('me-role').className = 'badge' + roleClass(state.user.role);
-  var tabs = [['auction', '🐾 경매 참가']];
+  var tabs = [['home', '🏡 앞마당'], ['auction', '🐾 경매 참가']];
   if (isMaster) tabs.push(['manage', '📢 경매 관리'], ['rotation', '📜 낙찰 기록'], ['items', '📦 아이템 창고'], ['members', '🐱 길드 냥이들'], ['bot', '🤖 길냥이봇']);
   tabs.push(['me', '🏠 내 정보']);
   $('tabs').innerHTML = tabs.map(function (t) {
     return '<button data-tab="' + t[0] + '">' + t[1] + '</button>'; }).join('');
   $('tabs').querySelectorAll('button').forEach(function (b) { b.onclick = function () { setTab(b.dataset.tab); }; });
   show('app');
-  setTab(isMaster && load('guildAuctionTab') && tabs.some(function (t) { return t[0] === load('guildAuctionTab'); })
-    ? load('guildAuctionTab') : 'auction');
+  setTab('home'); // 로그인하면 늘 앞마당부터
   stopTimer();
   state.timer = setInterval(function () {
     if (document.hidden) return;
@@ -896,6 +960,82 @@ function setTab(tab) {
   if (tab === 'rotation') loadRecords();
   if (tab === 'me') loadMyOptouts();
   if (tab === 'bot') { renderBotForm(); loadBot(); }
+  if (tab === 'home') loadHome();
+}
+
+/* ---------- 앞마당 ---------- */
+var homeData = null;
+function loadHome(silent) {
+  return call('welcome', {}, silent).then(function (d) { homeData = d; renderHome(); }).catch(function () {});
+}
+function fmtDay(ymd) {
+  if (!ymd) return '';
+  var d = new Date(ymd.slice(0, 10) + 'T00:00:00');
+  return (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + '일월화수목금토'[d.getDay()] + '요일';
+}
+function noticeHTML(text) {
+  var first = true;
+  return String(text || '').split('\n').map(function (raw) {
+    var line = raw.replace(/\s+$/, ''), t = line.trim(), m;
+    if (!t) return '<div class="gap"></div>';
+    if (first) { first = false; return '<div class="ln title">' + esc(t) + '</div>'; }
+    if ((m = t.match(/^([월화수목금토일])\s*[:：]\s*(.*)$/))) {
+      var hot = !/자율/.test(m[2]);
+      return '<div class="day' + (hot ? ' hot' : '') + '"><b>' + m[1] + '</b><span>' + esc(m[2]) + '</span></div>';
+    }
+    if (/^\d+\s*\./.test(t)) return '<div class="ln rule">' + esc(t) + '</div>';
+    if (/^\(?\d+\)|^\(/.test(t)) return '<div class="ln sub">' + esc(t) + '</div>';
+    return '<div class="ln">' + esc(t) + '</div>';
+  }).join('');
+}
+function renderHome() {
+  var d = homeData || {};
+  $('home-hello').textContent = '오늘도 놀러 와줘서 고맙다냥, ' + state.user.nickname + '!';
+  var n = d.notice || {};
+  $('home-notice').innerHTML = noticeHTML(n.text);
+  $('home-notice-by').textContent = n.by ? '마지막 수정: ' + n.by + ' · ' + fmtDate(n.at) : '';
+  $('home-edit').classList.toggle('hidden', !isAdmin(state.user.role));
+
+  var diary = d.diary;
+  if (!diary || !diary.text) {
+    $('home-diary-date').textContent = '';
+    $('home-diary').outerHTML = '<div id="home-diary" class="nodiary">' + emptyState('아직 일기가 없다냥. 밤 10시에 써준다냥', 'gray') + '</div>';
+  } else {
+    var body = String(diary.text).replace(/^📔[^\n]*\n+/, '');
+    $('home-diary-date').textContent = fmtDay(diary.date);
+    var el = $('home-diary'); el.className = ''; el.textContent = body;
+  }
+
+  var news = (d.news && d.news.items) || [];
+  if (!news.length) { $('home-news').innerHTML = emptyState('새소식을 아직 못 가져왔다냥', 'gray'); return; }
+  var top = news[0];
+  $('home-news').innerHTML =
+    '<a class="news-top" href="' + esc(top.url) + '" target="_blank" rel="noopener">' +
+      '<span class="news-new">NEW</span> <span class="sm">' + esc(fmtDay(top.date)) + ' 올라옴</span>' +
+      '<span class="tt">' + esc(top.title) + '</span>' +
+      (top.summary ? '<span class="sm">' + esc(top.summary) + '</span>' : '') +
+      '<div class="sm" style="margin-top:6px;font-weight:800;color:var(--text)">자세히 보러 가기 →</div></a>' +
+    '<div style="margin-top:8px">' + news.slice(1).map(function (x) {
+      return '<a class="news-item" href="' + esc(x.url) + '" target="_blank" rel="noopener"><span class="t">' + esc(x.title) + '</span><span class="d">' + esc((x.date || '').slice(5).replace('-', '/')) + '</span></a>';
+    }).join('') + '</div>' +
+    (d.news.at ? '<p class="muted" style="margin:8px 0 0">길냥이가 ' + esc(d.news.at.slice(5)) + '에 가져온 소식이다냥</p>' : '');
+}
+function editNotice() {
+  var cur = (homeData && homeData.notice && homeData.notice.text) || '';
+  $('modal-body').innerHTML = '<h2 style="margin-right:60px">📌 길드 공지 고치기</h2>' +
+    '<p class="muted">줄 맨 앞에 "1." 처럼 번호를 쓰면 규칙으로, "월 : 21시 …" 처럼 쓰면 요일표로 예쁘게 보여준다냥.</p>' +
+    '<textarea id="notice-edit"></textarea>' +
+    '<div class="row" style="margin-top:12px"><button class="primary grow" onclick="saveNotice()">저장하기냥</button><button onclick="closeModal()">취소</button></div>';
+  $('notice-edit').value = cur;
+  $('modal').classList.remove('hidden');
+  $('notice-edit').focus();
+}
+function saveNotice() {
+  var text = $('notice-edit').value;
+  if (!text.trim()) return toast('공지가 비었다냥.', true);
+  call('saveNotice', { text: text }).then(function (n) {
+    homeData = homeData || {}; homeData.notice = n; closeModal(); renderHome(); toast('공지를 고쳤다냥!');
+  }).catch(function () {});
 }
 
 /* ---------- 길냥이봇 (카톡 알림봇) ---------- */
