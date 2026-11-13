@@ -459,9 +459,9 @@
             <h2>📋 경매 안내다냥</h2>
             <ol class="guide-list">
               <li><b>전투력</b>과 <b>필요없는 아이템</b>을 꼭 지정해달라냥.</li>
-              <li>아이템마다 필요한 길드원이 <b>모두 분배될 때까지</b> 경매하는 거다냥.</li>
+              <li>각 아이템마다 필요한 길드원에게 <b>모두 분배될 때까지</b> 경매하는 거다냥.</li>
               <li>입찰한 길드원 중 <b>전투력이 가장 높은 냥이</b>가 낙찰한다냥.</li>
-              <li><b>입찰한 아이템은 사야 하는 거다냥.</b> 못 사게 되면 <b>패스</b>를 눌러라냥 (그 아이템은 다음 회차까지 입찰 못 한다냥).</li>
+              <li><b>입찰한 아이템은 사야 하는 거다냥.</b> <b>패스</b>하면, 이제 필요없는 거로 간주된다냥.</li>
               <li>다이아몬드는 며칠 안에 준비하면 된다냥.</li>
               <li>필요한 길드원이 없는 아이템을 어떻게 할지는 아직 모른다냥.</li>
             </ol>
@@ -1244,7 +1244,7 @@ function nameChips(names, winner, jobs) {
   }).join('') + '</div>';
 }
 
-var BLOCK_TEXT = { admin: 'admin 계정 참여 불가', job: '직업 불일치', won: '이번 회차에 이미 낙찰', optout: '필요없는 아이템 지정', pass: '이번 회차 패스' };
+var BLOCK_TEXT = { admin: 'admin 계정 참여 불가', job: '직업 불일치', won: '이번 회차에 이미 낙찰', optout: '필요없는 아이템 지정', pass: '패스' };
 var ENTRY_PASS = '패스';
 function blockText(reason) { return BLOCK_TEXT[reason] || ''; }
 
@@ -1272,8 +1272,9 @@ function showBidders(id) {
       '<td><b>' + esc(b.nickname) + '</b>' + (b.nickname === a.winner ? ' 🏆' : '') +
       '<div class="muted">' + esc(b.job || '직업 미설정') + (b.eligible ? '' : ' · ' + blockText(b.reason || 'job')) + '</div></td>' +
       '<td class="num price">' + fmtPower(b.power) + '</td>' +
-      '<td>' + ((b.nickname === state.user.nickname || isAdmin(state.user.role)) && (a.status === '진행중' || b.nickname === a.winner)
-        ? '<button class="sm no" onclick="passBid(\'' + a.id + '\', \'' + esc(b.nickname) + '\')">패스</button>' : '') + '</td></tr>';
+      '<td>' + (!(b.nickname === state.user.nickname || isAdmin(state.user.role)) ? ''
+        : a.status === '진행중' ? '<button class="sm no" onclick="cancelBid(\'' + a.id + '\', \'' + esc(b.nickname) + '\')">입찰 취소</button>'
+        : b.nickname === a.winner ? '<button class="sm no" onclick="passBid(\'' + a.id + '\', \'' + esc(b.nickname) + '\')">패스</button>' : '') + '</td></tr>';
   }).join('');
   var passedRows = (a.passed || []).map(function (p) {
     return '<tr class="off"><td class="rank">–</td><td><b>' + esc(p.nickname) + '</b><div class="muted">' + esc(p.job || '직업 미설정') + ' · 패스</div></td>' +
@@ -1312,8 +1313,7 @@ function renderAuctions() {
         (my === '참여' ? '<span class="badge join">입찰했다냥</span>' : my === '불참' ? '<span class="badge decline">불참</span>' : my === ENTRY_PASS ? '<span class="badge pass">패스</span>' : my === ENTRY_ABSENT ? '<span class="badge decline">🚫 레이드 미참여</span>' : '<span class="muted">아직 안 골랐다냥</span>') +
       '</div>' +
       (my === '참여'
-        ? '<div class="row"><button class="no grow big" onclick="passBid(\'' + a.id + '\')">패스</button></div>' +
-          '<div class="muted">패스하면 이 아이템은 다음 회차까지 입찰 못 한다냥</div>'
+        ? '<div class="row"><button class="no grow big" onclick="cancelBid(\'' + a.id + '\')">입찰 취소</button></div>'
         : a.canBid
         ? '<div class="row">' +
           '<button class="ok grow big" onclick="setEntry(\'' + a.id + '\', true)">입찰할래냥!</button>' +
@@ -1329,9 +1329,9 @@ function renderAuctions() {
     closed.map(function (a) {
       var canPass = a.winner && (a.winner === state.user.nickname || isAdmin(state.user.role));
       return '<tr><td>' + esc(a.itemName) + '</td><td class="num">' + won(a.price) + '</td><td>' + (a.winner ? '🏆 ' + esc(a.winner) : '-') +
-        (canPass ? ' <button class="sm no" onclick="passBid(\'' + a.id + '\', \'' + esc(a.winner) + '\')">패스</button>' : '') +
         '</td><td>' + a.joined.length + '명' + (a.passed && a.passed.length ? ' · 패스 ' + a.passed.length : '') + '</td><td class="muted">' + fmtDate(a.closedAt) + '</td>' +
-        '<td><button class="sm" onclick="showBidders(\'' + a.id + '\')">입찰자</button></td></tr>';
+        '<td style="white-space:nowrap"><button class="sm" onclick="showBidders(\'' + a.id + '\')">입찰자</button>' +
+        (canPass ? ' <button class="sm no" onclick="passBid(\'' + a.id + '\', \'' + esc(a.winner) + '\')">패스</button>' : '') + '</td></tr>';
     }).join('') + '</tbody></table></div>' : '<div class="empty">아직 끝난 경매가 없다냥.</div>';
 }
 
@@ -1343,6 +1343,8 @@ function lockBox(a) {
     html ='<div class="lock">🎁 이번 회차(' + a.round + '회차)에 이미 받은 아이템이다냥. 모두 한 번씩 받으면 다시 입찰할 수 있다냥!</div>';
   } else if (a.myBlock === 'pass') {
     html = '<div class="lock">🙈 이번 회차(' + a.round + '회차)에 패스한 아이템이다냥. 다음 회차에 다시 입찰할 수 있다냥.</div>';
+  } else if (a.myBlock === 'optout' && a.myPassed) {
+    html = '<div class="lock">🙈 패스한 아이템이라 참가할 수 없다냥.</div>';
   } else if (a.myBlock === 'optout') {
     html = '<div class="lock">🙅 필요없는 아이템으로 지정했다냥.</div>' +
       '<div><button class="sm" onclick="quickOptout(\'' + a.id + '\', false)">지정 취소하고 입찰하기</button></div>';
@@ -1372,14 +1374,22 @@ function showNotice(msg) {
 function passBid(id, nickname) {
   var a = state.auctions.filter(function (x) { return x.id === id; })[0]; if (!a) return;
   var who = nickname || state.user.nickname, me = who === state.user.nickname;
-  var reopen = a.status !== '진행중' && a.winner === who;
-  var msg = (me ? '' : who + ' 님의 ') + '"' + a.itemName + '" 입찰을 패스할까냥?\n\n' +
-    '패스하면 이 아이템은 다음 회차까지 입찰할 수 없다냥.' + (reopen ? '\n낙찰도 취소되고 경매가 다시 진행중으로 열린다냥.' : '');
+  var msg = (me ? '' : who + ' 님의 ') + '"' + a.itemName + '" 구매를 취소하고 패스할까냥?\n\n' +
+    '경매가 다시 진행중으로 열리고 다음 순위가 1순위가 된다냥.\n' +
+    '패스한 아이템은 필요없는 아이템으로 지정돼서 앞으로 이 아이템 경매에 참가할 수 없다냥.';
   if (!confirm(msg)) return;
   call('passBid', { auctionId: id, nickname: who }).then(function (r) {
     closeModal();
     toast(r.reopened ? '패스했다냥. 경매를 다시 열었다냥!' : '패스했다냥.');
     loadAuctions(true);
+  }).catch(function () { loadAuctions(true); });
+}
+function cancelBid(id, nickname) {
+  var a = state.auctions.filter(function (x) { return x.id === id; })[0]; if (!a) return;
+  var who = nickname || state.user.nickname, me = who === state.user.nickname;
+  if (!confirm((me ? '' : who + ' 님의 ') + '"' + a.itemName + '" 입찰을 취소할까냥?')) return;
+  call('cancelBid', { auctionId: id, nickname: who }).then(function () {
+    closeModal(); toast('입찰을 취소했다냥'); loadAuctions(true);
   }).catch(function () { loadAuctions(true); });
 }
 function setEntry(id, join) {
@@ -1936,9 +1946,11 @@ function renderOptouts(scope) {
     var off = optOff(i, u), chg = off !== i.optedOut;
     html += '<div class="opt-row' + (off ? ' on' : '') + (chg ? ' chg' : '') + '"><span class="nm">' + esc(i.name) + '</span>' +
       (i.won ? '<span class="badge join">이번 회차 받음</span>' : '') +
-      (i.passed ? '<span class="badge pass">이번 회차 패스</span>' : '') +
+      (i.passed ? '<span class="badge pass">패스</span>' : '') +
       (i.optedOut && i.optedBy && i.optedBy !== u.nickname ? '<span class="muted">' + esc(i.optedBy) + ' 지정</span>' : '') +
-      '<button class="tgl' + (off ? ' off' : '') + '" onclick="flipOpt(\'' + scope + '\', \'' + i.id + '\')">' + (off ? '🙅 안 받기' : '🙆 받기') + '</button></div>';
+      (i.passed && i.optedOut && !isAdmin(state.user.role)
+        ? '<button class="tgl off" disabled title="패스한 아이템은 길마/부길마만 풀 수 있다냥">🔒 패스</button></div>'
+        : '<button class="tgl' + (off ? ' off' : '') + '" onclick="flipOpt(\'' + scope + '\', \'' + i.id + '\')">' + (off ? '🙅 안 받기' : '🙆 받기') + '</button></div>');
   });
   var n = optChanges(scope).length;
   html += '<div class="savebar' + (n ? '' : ' idle') + '"><span>' + (n ? n + '개 바꿨다냥 (저장 안 함)' : '눌러서 받기/안 받기를 바꾸라냥') + '</span>' +
