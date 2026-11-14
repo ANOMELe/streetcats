@@ -267,6 +267,17 @@
   .tgl.off { background: #eee3d0; color: var(--muted); }
   .relaxrow { gap: 6px; align-items: center; }
   .badge.prio { background: #fff0b8; border-color: var(--accent); color: #9a5a00; }
+  /* 카톡 알림: 냥이 고르기 */
+  .npick { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+  .npick button { border-radius: 999px; padding: 6px 12px; font-size: 14px; background: #fff; border: 1.5px solid #e2d3bd; color: inherit; }
+  .npick button small { font-size: 11px; opacity: .75; margin-left: 4px; }
+  .npick button.on { background: #ffb347; border-color: #f08a24; color: #fff; font-weight: bold; }
+  .npick button.sent { opacity: .45; }
+  .npick button.sent.on { opacity: .85; }
+  .npick button.nokakao { border-style: dashed; border-color: #d98b5f; color: #b0603a; }
+  .npick.editing button { border-style: dashed; }
+  .kakao-warn { background: #fff3e6; border: 1.5px solid #f0b37e; border-radius: 10px; padding: 8px 10px; font-size: 13px; margin: 8px 0; }
+  .notified { font-size: 13px; }
   .badge.relax { background: #fff0b8; border-color: var(--accent); }
   .absgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 6px 14px; max-height: 360px; overflow: auto; padding: 2px; }
   .absrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 4px 4px 10px; border: 2px solid var(--line); border-radius: 12px; background: #fff; }
@@ -1541,7 +1552,10 @@ function manageCard(a) {
     var opts = '<option value="">낙찰자 없음 (유찰)</option>' + a.bidders.map(function (b) {
       return '<option value="' + esc(b.nickname) + '"' + (b.nickname === pick ? ' selected' : '') + '>' + esc(b.nickname) +
         ' (' + fmtPower(b.power) + (b.eligible ? '' : ', ' + blockText(b.reason || 'job')) + ')</option>'; }).join('');
-    if (a.winner && a.joined.indexOf(a.winner) < 0) opts += '<option selected>' + esc(a.winner) + '</option>';
+    var others = (a.candidates || []).filter(function (m) { return a.joined.indexOf(m.nickname) < 0; });
+    if (others.length) opts += '<optgroup label="입찰 안 한 냥이 (대신 낙찰)">' + others.map(function (m) {
+      return '<option value="' + esc(m.nickname) + '"' + (m.nickname === pick ? ' selected' : '') + '>' + esc(m.nickname) + ' (' + fmtPower(m.power) + (m.entry === '불참' ? ', 불참' : '') + ')</option>'; }).join('') + '</optgroup>';
+    if (a.winner && a.joined.indexOf(a.winner) < 0 && !others.some(function (m) { return m.nickname === a.winner; })) opts += '<option selected>' + esc(a.winner) + '</option>';
     return '<div class="card auction">' +
       '<div class="row" style="justify-content:space-between">' +
         '<span class="row"><span class="title">' + esc(a.itemName) + '</span><span class="badge ' + (active ? 'active' : 'closed') + '">' + esc(a.status) + '</span></span>' +
@@ -1555,7 +1569,9 @@ function manageCard(a) {
       (active ? '<div class="row relaxrow"><span class="muted">경매중 바꾸기</span>' +
         '<button class="sm" onclick="changePrice(\'' + a.id + '\')">💰 가격 변경</button>' +
         '<button class="sm' + (a.ignoreJob ? ' primary' : '') + '" onclick="toggleRelax(\'' + a.id + '\', \'job\')">🔓 직업 제한 무시 ' + (a.ignoreJob ? '켜짐' : '꺼짐') + '</button>' +
-        '<button class="sm' + (a.ignoreOptout ? ' primary' : '') + '" onclick="toggleRelax(\'' + a.id + '\', \'opt\')">🔓 안 받을 템 무시 ' + (a.ignoreOptout ? '켜짐' : '꺼짐') + '</button></div>' : '') +
+        '<button class="sm' + (a.ignoreOptout ? ' primary' : '') + '" onclick="toggleRelax(\'' + a.id + '\', \'opt\')">🔓 안 받을 템 무시 ' + (a.ignoreOptout ? '켜짐' : '꺼짐') + '</button>' +
+        '<button class="sm" onclick="openNotify(\'' + a.id + '\')">📣 카톡 알림</button></div>' : '') +
+      notifiedLine(a) +
       '<div class="row">' +
         (active ? '<label style="margin:0;white-space:nowrap">낙찰자</label><select class="grow" id="w-' + a.id + '">' + opts + '</select>' +
                   '<button class="sm primary" onclick="closeAuction(\'' + a.id + '\', this)">마감</button>'
@@ -1598,11 +1614,97 @@ function toggleRelax(id, kind) {
 function closeAuction(id, btn) {
   var a = state.auctions.filter(function (x) { return x.id === id; })[0]; if (!a) return;
   var w = $('w-' + id).value;
-  if (!confirm('"' + a.itemName + '" 경매를 마감할까냥?\n' + (w ? '🏆 낙찰: ' + w + ' (' + won(a.price) + ')' : '낙찰자 없이 유찰로 마감한다냥.'))) return;
+  var proxy = w && a.joined.indexOf(w) < 0;
+  if (!confirm('"' + a.itemName + '" 경매를 마감할까냥?\n' + (w ? '🏆 낙찰: ' + w + ' (' + won(a.price) + ')' + (proxy ? '\n※ ' + w + ' 님은 입찰하지 않아서 대신 입찰 처리하고 낙찰한다냥.' : '') : '낙찰자 없이 유찰로 마감한다냥.'))) return;
   btn.disabled = true;
   call('updateAuction', { id: id, status: '마감', winner: w }).then(function () {
     toast(w ? '마감했다냥! 낙찰: ' + w : '유찰로 마감했다냥'); loadAuctions(); loadRecords(true);
   }).catch(function () { btn.disabled = false; });
+}
+/* ---------- 경매 카톡 알림: 입찰 가능 냥이를 골라 카톡방에서 태그 (길마/부길마) ---------- */
+// state.ntf = { id, sel: { 닉네임: true } }
+function notifyDefaultText(a) { return '[' + a.itemName + '] 경매에 입찰할 수 있다냥! 홈페이지에서 입찰해달라냥 🐾'; }
+function notifiedLine(a) {
+  var n = a.notified || {}, names = Object.keys(n);
+  if (!names.length) return '';
+  return '<div class="notified muted">📣 카톡 알림 보냄: ' + names.map(function (k) {
+    var st = n[k].status;
+    return esc(k) + (st === '대기' ? ' <small>(보내는 중)</small>' : st === '실패' ? ' <small style="color:#c0392b">(실패)</small>' : '');
+  }).join(', ') + '</div>';
+}
+function openNotify(id) {
+  var a = findAuction(id); if (!a) return;
+  state.ntf = { id: id, sel: {}, text: notifyDefaultText(a) };
+  renderNotify();
+  $('modal').classList.add('wide');
+  $('modal').classList.remove('hidden');
+}
+function renderNotify() {
+  var u = state.ntf, a = u && findAuction(u.id); if (!a) return;
+  var ta = $('ntf-text'); if (ta) u.text = ta.value;
+  var c = a.candidates || [], sent = a.notified || {};
+  var n = Object.keys(u.sel).filter(function (k) { return u.sel[k]; }).length;
+  var btns = c.map(function (m) {
+    var s = sent[m.nickname];
+    if (!m.kakao) return '<button class="nokakao" title="카톡이름이 비어 있다냥. 눌러서 입력하라냥" onclick="editKakao(\'' + esc(m.nickname) + '\')">' +
+      esc(m.nickname) + '<small>✏️ 카톡이름 입력</small></button>';
+    var cls = (u.sel[m.nickname] ? 'on' : '') + (s ? ' sent' : '');
+    var tip = '카톡: ' + m.kakao + (s ? ' · ' + fmtDate(s.at) + ' 알림 보냄' + (s.status === '실패' ? ' (실패)' : '') : '');
+    return '<button class="' + cls + '" title="' + esc(tip) + '" onclick="' + (u.edit ? 'editKakao' : 'pickNotify') + '(\'' + esc(m.nickname) + '\')">' +
+      (s ? '📣 ' : '') + esc(m.nickname) + '<small>' + (u.edit ? '@' + esc(m.kakao) : m.entry === '참여' ? '입찰함' : m.entry === '불참' ? '불참' : fmtPower(m.power)) + '</small></button>';
+  }).join('');
+  var tags = c.filter(function (m) { return u.sel[m.nickname] && m.kakao; }).map(function (m) { return '@' + esc(m.kakao); }).join(' ');
+  $('modal-body').innerHTML = '<h2 style="margin-right:60px">📣 카톡 알림 · ' + esc(a.itemName) + '</h2>' +
+    '<p class="muted" style="margin-top:-6px">입찰할 수 있는 냥이를 골라서 카톡방에서 <b>태그</b>해 알려준다냥. 흐린 이름(📣)은 이미 알림을 보낸 냥이다냥 (또 보내도 된다냥).</p>' +
+    '<div class="kakao-warn">⚠️ <b>카톡이름은 카톡방에 보이는 이름과 정확히 똑같아야</b> 태그된다냥. 띄어쓰기·이모지·영문 대소문자까지 한 글자라도 다르면 태그가 안 된다냥.</div>' +
+    '<div class="row"><button class="sm" onclick="pickNotifyAll(\'nobid\')">입찰 안 한 냥이 모두</button><button class="sm" onclick="pickNotifyAll(\'none\')">모두 해제</button>' +
+    '<button class="sm' + (u.edit ? ' primary' : '') + '" onclick="toggleKakaoEdit()">✏️ 카톡이름 고치기 ' + (u.edit ? '켜짐' : '꺼짐') + '</button></div>' +
+    (u.edit ? '<div class="muted">이름을 누르면 카톡이름을 고친다냥. 다 고쳤으면 다시 눌러 끄라냥.</div>' : '') +
+    (c.length ? '<div class="npick' + (u.edit ? ' editing' : '') + '">' + btns + '</div>' : emptyState('입찰할 수 있는 냥이가 없다냥', 'gray')) +
+    (tags ? '<div class="muted">보낼 태그: <b>' + tags + '</b></div>' : '') +
+    '<label>보낼 내용</label><textarea id="ntf-text" rows="3" maxlength="300" style="width:100%">' + esc(u.text) + '</textarea>' +
+    '<div class="muted">카톡방에는 <b>@카톡이름 … 보낼 내용</b> 으로 간다냥. 한 번에 15명까지.</div>' +
+    '<div class="row" style="margin-top:10px"><span class="grow muted">' + n + '명 골랐다냥</span>' +
+    '<button class="primary" id="ntf-send"' + (n ? '' : ' disabled') + ' onclick="sendNotify()">카톡으로 보내기</button></div>';
+}
+function toggleKakaoEdit() { var u = state.ntf; if (!u) return; u.edit = !u.edit; renderNotify(); }
+function editKakao(nick) {
+  var u = state.ntf, a = u && findAuction(u.id); if (!a) return;
+  var m = (a.candidates || []).filter(function (x) { return x.nickname === nick; })[0] || {};
+  var v = prompt('"' + nick + '" 님의 카톡이름을 입력하라냥.\n\n⚠️ 카톡방에 보이는 이름과 정확히 똑같아야 태그된다냥!\n(띄어쓰기·이모지·영문 대소문자까지 한 글자도 다르면 안 된다냥. @는 빼고 적어라냥)', m.kakao || '');
+  if (v == null) return;
+  v = v.trim().replace(/^@+/, '').trim();
+  if (v === (m.kakao || '')) return;
+  if (!v && !confirm('"' + nick + '" 님의 카톡이름을 지울까냥?')) return;
+  if ($('ntf-text')) u.text = $('ntf-text').value;
+  call('setKakao', { nickname: nick, kakao: v }).then(function (r) {
+    v = r && r.kakao !== undefined ? r.kakao : v;
+    state.auctions.forEach(function (x) { (x.candidates || []).forEach(function (cm) { if (cm.nickname === nick) cm.kakao = v; }); });
+    if (v && !u.edit) u.sel[nick] = true;
+    if (!v) delete u.sel[nick];
+    toast(v ? '카톡이름을 "' + v + '"(으)로 저장했다냥' : '카톡이름을 지웠다냥');
+    renderNotify();
+  }).catch(function () {});
+}
+function pickNotify(nick) { var u = state.ntf; if (!u) return; u.sel[nick] = !u.sel[nick]; renderNotify(); }
+function pickNotifyAll(kind) {
+  var u = state.ntf, a = u && findAuction(u.id); if (!a) return;
+  u.sel = {};
+  if (kind === 'nobid') (a.candidates || []).forEach(function (m) { if (m.kakao && m.entry !== '참여') u.sel[m.nickname] = true; });
+  renderNotify();
+}
+function sendNotify() {
+  var u = state.ntf, a = u && findAuction(u.id); if (!a) return;
+  var nicks = Object.keys(u.sel).filter(function (k) { return u.sel[k]; });
+  var text = $('ntf-text').value.trim();
+  if (!nicks.length) return toast('알림 보낼 냥이를 골라라냥', true);
+  if (!text) return toast('보낼 내용을 적어라냥', true);
+  if (!confirm(nicks.length + '명을 카톡방에서 태그해서 보낼까냥?\n' + nicks.join(', ') + '\n\n' + text)) return;
+  $('ntf-send').disabled = true;
+  call('notifyBidders', { auctionId: a.id, nicknames: nicks, text: text }).then(function () {
+    toast('길냥이봇이 곧 카톡방에 보낸다냥! (20초쯤 걸린다냥)');
+    closeModal(); loadAuctions(true);
+  }).catch(function () { var b = $('ntf-send'); if (b) b.disabled = false; });
 }
 function reopenAuction(id) {
   if (!confirm('이 경매를 다시 진행할까냥?\n낙찰 기록은 지워지고, 다시 마감할 때 새로 저장된다냥.')) return;
