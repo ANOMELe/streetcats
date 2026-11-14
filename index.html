@@ -459,12 +459,12 @@
           <div>
             <h2>📋 경매 안내다냥</h2>
             <ol class="guide-list">
-              <li><b>전투력</b>과 <b>필요없는 아이템</b>을 꼭 지정해달라냥.</li>
+              <li><b>전투력</b>을 꼭 입력해달라냥.</li>
               <li>각 아이템마다 필요한 길드원에게 <b>모두 분배될 때까지</b> 경매하는 거다냥.</li>
               <li>입찰한 길드원 중 <b>전투력이 가장 높은 냥이</b>가 낙찰한다냥.</li>
               <li>입찰 후 <b>일요일 저녁까지 패스</b>할 수 있고, 패스하면 <b>다음 경매에 1순번</b>으로 낙찰받게 된다냥.</li>
-              <li>다이아몬드는 며칠 안에 준비하면 된다냥.</li>
-              <li>필요한 길드원이 없는 아이템을 어떻게 할지는 아직 모른다냥.</li>
+              <li>경매가 한바퀴 돌아서 더이상 필요한 길드원이 없어진다면, <b>길마 - 부길마 - 투력 60% + 참여도 40%</b>로 입찰없이 지급된다냥.</li>
+              <li><b>필요없는 아이템 지정</b>을 고치고 싶으면 길마에게 말해주라냥.</li>
             </ol>
           </div>
           <div class="auc-me">
@@ -474,7 +474,7 @@
               <button class="primary" onclick="saveAuctionPower()">갱신</button>
             </div>
             <div class="muted" id="a-power-now"></div>
-            <button class="full" style="margin-top:12px" onclick="openMyOptoutsModal()">🙅 필요없는 아이템 지정</button>
+            <button class="full" style="margin-top:12px" onclick="openMyOptoutsModal()">🙅 내 받기/안 받기 보기</button>
           </div>
         </div>
       </div>
@@ -665,6 +665,7 @@
           <button class="sm" onclick="loadMatrix()">새로고침</button>
         </div>
         <p class="muted">칸을 눌러 <b class="mx-on">○ 받기</b> / <b class="mx-off">✕ 안 받기</b>를 바꾸고 <b>한꺼번에 저장</b>하라냥. <span style="color:#bba58a">·</span> 는 직업이 안 맞아 원래 못 받는 칸. 아이템 이름을 누르면 그 열 전체를 바꾼다냥.</p>
+        <p class="lock hidden" id="x-ro">🔒 받기/안 받기는 <b>길마만</b> 바꿀 수 있다냥. 부길마는 보기와 메모만 된다냥.</p>
         <div class="row" style="margin-bottom:10px">
           <input id="x-nick" class="grow" placeholder="닉네임·직업으로 찾기">
           <input id="x-item" class="grow" placeholder="아이템·분류·직업으로 찾기">
@@ -709,8 +710,8 @@
         </div>
       </div>
       <div class="card">
-        <h2>🙅 필요없는 아이템 지정</h2>
-        <p class="muted" style="margin-top:-6px">눌러서 <b>받기 / 안 받기</b>를 다 고른 뒤 <b>한꺼번에 저장</b>하라냥. 안 받기로 한 아이템은 입찰할 수 없고, <b>받은 것과 똑같이 분배 끝</b>으로 친다냥. <b>내가 취소할 때까지 유지</b>된다냥.</p>
+        <h2>🙅 내 받기/안 받기</h2>
+        <p class="muted" style="margin-top:-6px">낙찰 받은 아이템은 <b>자동으로 안 받기</b>가 된다냥. 추가로 안 받고 싶은 아이템은 <b>길마에게 말해주라냥</b>.</p>
         <div id="my-optouts"></div>
       </div>
     </div>
@@ -822,6 +823,8 @@ function drawDecor() {
 // 길마: 전부 / 부길마: 권한 변경 빼고 길마와 같음 / 기사단장: 길드원과 같음(표시만 다름)
 var ROLES = ['길마', '부길마', '기사단장', '길드원'];
 function isAdmin(role) { return role === '길마' || role === '부길마'; }
+// 받기/안 받기(필요없는 아이템) 지정·취소는 길마만
+function canEditOpt() { return !!state.user && state.user.role === '길마'; }
 function roleClass(role) { return { '길마': ' master', '부길마': ' sub', '기사단장': ' knight' }[role] || ''; }
 function roleBadge(role) { return '<span class="badge' + roleClass(role) + '">' + esc(role || '길드원') + '</span>'; }
 function fmtPower(n) { return n ? Number(n).toLocaleString('ko-KR') : '-'; }
@@ -1335,7 +1338,7 @@ function renderAuctions() {
           '<button class="ok grow big" onclick="setEntry(\'' + a.id + '\', true)">입찰할래냥!</button>' +
           '<button class="no grow big" ' + (my === '불참' ? 'disabled' : '') + ' onclick="setEntry(\'' + a.id + '\', false)">이번엔 안 할래</button>' +
           '</div>' +
-          '<div><button class="linkbtn" onclick="quickOptout(\'' + a.id + '\', true)">이 아이템은 필요없다냥</button></div>'
+          (canEditOpt() ? '<div><button class="linkbtn" onclick="quickOptout(\'' + a.id + '\', true)">이 아이템은 필요없다냥</button></div>' : '')
         : lockBox(a)) +
       '<div class="muted">열린 시간 ' + fmtDate(a.createdAt) + '</div>' +
     '</div>';
@@ -1358,8 +1361,9 @@ function lockBox(a) {
   } else if (a.myBlock === 'won') {
     html ='<div class="lock">🎁 이미 받은 아이템이다냥.</div>';
   } else if (a.myBlock === 'optout') {
-    html = '<div class="lock">🙅 필요없는 아이템으로 지정했다냥.</div>' +
-      '<div><button class="sm" onclick="quickOptout(\'' + a.id + '\', false)">지정 취소하고 입찰하기</button></div>';
+    html = '<div class="lock">🙅 필요없는 아이템으로 지정돼 있다냥.</div>' +
+      (canEditOpt() ? '<div><button class="sm" onclick="quickOptout(\'' + a.id + '\', false)">지정 취소하고 입찰하기</button></div>'
+        : '<div class="muted">받으려면 길마에게 지정 취소를 부탁해라냥.</div>');
   } else {
     html = '<div class="lock">🔒 ' + esc(a.itemJob) + ' 전용 장비라 입찰할 수 없다냥' + (state.user.job ? ' (내 직업: ' + esc(state.user.job) + ')' : ' — 내 정보에서 직업부터 정해라냥') + '</div>';
   }
@@ -1954,16 +1958,19 @@ function renderOptouts(scope) {
   var u = optUI[scope], box = $(OPT_BOX[scope]); if (!u || !box) return;
   var list = sortItems(u.items.filter(function (i) { return i.jobOk || i.optedOut; }));
   if (!list.length) { box.innerHTML = emptyState('받을 수 있는 아이템이 없다냥', 'gray'); return; }
-  var html = '', last = null;
+  var edit = canEditOpt(), html = '', last = null;
   list.forEach(function (i) {
     var cat = i.category || '분류 없음';
     if (cat !== last) { html += '<div class="rot-group"><span class="catpill" style="background:' + catColor(cat) + '">' + esc(cat) + '</span></div>'; last = cat; }
     var off = optOff(i, u), chg = off !== i.optedOut;
-    html += '<div class="opt-row' + (off ? ' on' : '') + (chg ? ' chg' : '') + '"><span class="nm">' + esc(i.name) + '</span>' +
+    html += '<div class="opt-row' + (off || i.won ? ' on' : '') + (chg ? ' chg' : '') + '"><span class="nm">' + esc(i.name) + '</span>' +
       (i.won ? '<span class="badge join">받음</span>' : '') +
       (i.optedOut && i.optedBy && i.optedBy !== u.nickname ? '<span class="muted">' + esc(i.optedBy) + ' 지정</span>' : '') +
-      ('<button class="tgl' + (off ? ' off' : '') + '" onclick="flipOpt(\'' + scope + '\', \'' + i.id + '\')">' + (off ? '🙅 안 받기' : '🙆 받기') + '</button></div>');
+      (i.won ? '<span class="tgl off" style="cursor:default">🙅 안 받기</span></div>'
+        : edit ? '<button class="tgl' + (off ? ' off' : '') + '" onclick="flipOpt(\'' + scope + '\', \'' + i.id + '\')">' + (off ? '🙅 안 받기' : '🙆 받기') + '</button></div>'
+        : '<span class="tgl' + (off ? ' off' : '') + '" style="cursor:default">' + (off ? '🙅 안 받기' : '🙆 받기') + '</span></div>');
   });
+  if (!edit) { box.innerHTML = html; return; }
   var n = optChanges(scope).length;
   html += '<div class="savebar' + (n ? '' : ' idle') + '"><span>' + (n ? n + '개 바꿨다냥 (저장 안 함)' : '눌러서 받기/안 받기를 바꾸라냥') + '</span>' +
     '<div class="row"><button class="sm" onclick="resetOpt(\'' + scope + '\')">되돌리기</button>' +
@@ -1971,7 +1978,7 @@ function renderOptouts(scope) {
   box.innerHTML = html;
 }
 function flipOpt(scope, itemId) {
-  var u = optUI[scope]; if (!u) return;
+  var u = optUI[scope]; if (!u || !canEditOpt()) return;
   var i = u.items.filter(function (x) { return x.id === itemId; })[0]; if (!i) return;
   u.edits[itemId] = !optOff(i, u);
   renderOptouts(scope);
@@ -1997,8 +2004,8 @@ function loadMyOptouts() {
 function openMyOptoutsModal() {
   call('myItems', {}).then(function (items) {
     optUI.modal = { nickname: state.user.nickname, items: items, edits: {}, self: true };
-    $('modal-body').innerHTML = '<h2 style="margin-right:60px">🙅 필요없는 아이템 지정</h2>' +
-      '<p class="muted" style="margin-top:-6px">눌러서 <b>받기 / 안 받기</b>를 다 고른 뒤 <b>한꺼번에 저장</b>하라냥. 필요없는 아이템은 입찰할 수 없고, 받은 것과 똑같이 분배 끝으로 친다냥.</p>' +
+    $('modal-body').innerHTML = '<h2 style="margin-right:60px">🙅 내 받기/안 받기</h2>' +
+      '<p class="muted" style="margin-top:-6px">낙찰 받은 아이템은 <b>자동으로 안 받기</b>가 된다냥. ' + (canEditOpt() ? '눌러서 <b>받기 / 안 받기</b>를 다 고른 뒤 <b>한꺼번에 저장</b>하라냥.' : '추가로 안 받고 싶은 아이템은 <b>길마에게 말해주라냥</b>.') + '</p>' +
       '<div id="modal-opt"></div>';
     renderOptouts('modal');
     $('modal').classList.add('wide');
@@ -2097,6 +2104,7 @@ function renderMatrix() {
       }).join('') + '</tr>';
   }).join('');
   $('x-table').innerHTML = '<thead>' + head1 + head2 + '</thead><tbody>' + body + '</tbody>';
+  $('x-ro').classList.toggle('hidden', canEditOpt());
   updateMatrixBar();
 }
 function mxCanToggle(m, i) { return !i.job || i.job === m.job || mxOrig(m.nickname, i.id); }
@@ -2104,6 +2112,7 @@ function mxSet(m, i, off) { (state.mxEdits[m.nickname] = state.mxEdits[m.nicknam
 $('x-table').addEventListener('click', function (e) {
   var L = state.mxView; if (!L) return;
   var td = e.target.closest('td.c'), th = e.target.closest('th.it');
+  if ((td || th) && !canEditOpt()) return toast('받기/안 받기는 길마만 바꿀 수 있다냥.', true);
   if (td) {
     var m = L.members[td.getAttribute('data-r')], i = L.items[td.getAttribute('data-k')];
     var off = !mxOff(m.nickname, i.id);
