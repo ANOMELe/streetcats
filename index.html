@@ -170,6 +170,10 @@
   .auc-me label { margin-top: 0; }
   .auc-me .row { flex-wrap: nowrap; } .auc-me input { min-width: 0; }
   .badge.pass { background: #e9e1f4; color: #6b4fa0; }
+  .badge.newbie { background: #fff7c2; border-color: #f2c94c; color: #8a6d00; }
+  .bid-sec { margin: 14px 0 6px; font-weight: bold; }
+  .bid-sec small { font-weight: normal; }
+  #nb-toggle.off { opacity: .8; }
   #modal .close { position: absolute; top: 10px; right: 10px; }
   tr.off td { opacity: .45; }
   tr.me td { background: #fff3dc; }
@@ -525,6 +529,21 @@
           <div class="roundbox"><span class="muted">분배 상태</span><b id="a-round">-</b></div>
         </div>
       </div>
+      <div class="card" id="nb-card">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <h2 style="margin:0">🐣 새냥이 순번 조정 <span class="badge relax">시험 운영</span></h2>
+          <button class="tgl" id="nb-toggle" onclick="toggleNewbie()">꺼짐</button>
+        </div>
+        <p class="muted" id="nb-desc" style="margin:8px 0 0">불러오는 중이다냥…</p>
+        <div id="nb-form" class="hidden">
+          <div class="row">
+            <div class="grow"><label>몇 칸 미룰까냥? (n)</label><input id="nb-n" type="number" min="1" max="99" step="1" inputmode="numeric"></div>
+            <div class="grow"><label>지정 날짜 (이날 포함, 이후 가입한 냥이)</label><input id="nb-since" type="date"></div>
+          </div>
+          <p class="muted" style="margin:6px 0">가입한 날은 회원 시트의 <b>등록일</b>로 따진다냥. 패스 우선권은 그대로 먼저다냥.</p>
+          <div class="row"><button class="primary grow" id="nb-save" onclick="saveNewbie(true)">저장하고 켜기</button><button onclick="closeNewbieForm()">취소</button></div>
+        </div>
+      </div>
       <div class="row" style="justify-content:space-between;margin-bottom:12px">
         <h2 style="margin:0">진행중 경매</h2>
         <button class="sm" onclick="loadAuctions(); loadRecords()">새로고침</button>
@@ -859,7 +878,7 @@ function toast(msg, isErr) {
 var pending = 0;
 // 읽기만 하는 요청. 나머지는 모두 시트에 쓰는 요청이라 저장 팝업을 띄움
 var READ_ACTIONS = { login: 1, logout: 1, me: 1, jobs: 1, listAuctions: 1, listItems: 1, listMembers: 1, listRecords: 1,
-  listRotation: 1, memberItems: 1, myItems: 1, optoutMatrix: 1, botStatus: 1, botKey: 1, welcome: 1 };
+  listRotation: 1, memberItems: 1, myItems: 1, optoutMatrix: 1, botStatus: 1, botKey: 1, welcome: 1, getNewbieRule: 1 };
 var saving = 0, savingTimer;
 function savingStart() {
   saving++; clearTimeout(savingTimer);
@@ -998,7 +1017,7 @@ function setTab(tab) {
   document.querySelectorAll('.tab').forEach(function (el) { el.classList.toggle('hidden', el.id !== 't-' + tab); });
   $('tabs').querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === tab); });
   if (tab === 'auction') loadAuctions();
-  if (tab === 'manage') { loadItems(); loadAuctions(); loadRecords(); }
+  if (tab === 'manage') { loadItems(); loadAuctions(); loadRecords(); loadNewbie(); }
   if (tab === 'items') loadItems();
   if (tab === 'members') setMemberSub(state.memberSub || load('guildMemberSub') || 'list', true);
   if (tab === 'rotation') loadRecords();
@@ -1269,39 +1288,98 @@ function topBox(a) {
   if (!a.top) {
     return '<div class="topbox none"><span class="crown">🐾</span><span>' +
       (n ? '입찰할 수 있는 냥이가 없다냥 (입찰 ' + n + '명)' : '아직 입찰한 냥이가 없다냥') + '</span>' +
-      (n ? '<button class="sm" style="margin-left:auto" onclick="showBidders(\'' + a.id + '\')">목록</button>' : '') + '</div>';
+      '<button class="sm" style="margin-left:auto" onclick="showBidders(\'' + a.id + '\')">목록</button></div>';
   }
   var me = a.top.nickname === state.user.nickname;
   return '<button class="topbox" onclick="showBidders(\'' + a.id + '\')">' +
     '<span class="crown">👑</span><span><span class="muted">현재 1순위' + (me ? ' (나다냥!)' : '') + '</span><br>' +
-    '<span class="who">' + esc(a.top.nickname) + '</span> · ' + (topPriority(a) ? '<span class="badge prio">⭐ 패스 우선</span>' : '전투력 <span class="pw">' + fmtPower(a.top.power) + '</span>') + '</span>' +
+    '<span class="who">' + esc(a.top.nickname) + '</span>' + newbieBadge(a.top) + ' · ' + (topPriority(a) ? '<span class="badge prio">⭐ 패스 우선</span>' : '전투력 <span class="pw">' + fmtPower(a.top.power) + '</span>') + '</span>' +
     '<span class="more">입찰 ' + n + '명 보기 ›</span></button>';
 }
 
+/* ---------- 새냥이 순번 조정 (시험 운영, 길마/부길마) ---------- */
+// state.nb = { on, n, since:'YYYY-MM-DD' }
+function newbieBadge(x) { return x && x.newbie && x.demote ? ' <span class="badge newbie">🐣 우선도 -' + x.demote + '</span>' : ''; }
+function sinceText(d) { if (!d) return ''; var p = d.split('-'); return Number(p[1]) + '/' + Number(p[2]); }
+function loadNewbie() {
+  return call('getNewbieRule', {}, true).then(function (r) { state.nb = r; renderNewbie(); }).catch(function () {});
+}
+function renderNewbie() {
+  var r = state.nb; if (!r || !$('nb-card')) return;
+  var t = $('nb-toggle');
+  t.textContent = r.on ? '🐣 켜짐' : '꺼짐';
+  t.classList.toggle('off', !r.on);
+  t.classList.toggle('primary', !!r.on);
+  $('nb-desc').innerHTML = r.on
+    ? '<b>' + esc(sinceText(r.since)) + '</b>(' + esc(r.since) + ') 이후 가입한 냥이는 경매 순위가 <b>' + r.n + '칸</b> 뒤로 밀린다냥. ' +
+      '<button class="linkbtn" onclick="openNewbieForm()">고치기</button>'
+    : '꺼져 있다냥. 켜면 지정 날짜 이후 가입한 새냥이의 경매 순위를 n칸 뒤로 미룬다냥.';
+}
+function openNewbieForm() {
+  var r = state.nb || {};
+  $('nb-n').value = r.n || 1;
+  var d = new Date();
+  $('nb-since').value = r.since || (d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'));
+  $('nb-save').textContent = r.on ? '저장하기' : '저장하고 켜기';
+  $('nb-form').classList.remove('hidden');
+}
+function closeNewbieForm() { $('nb-form').classList.add('hidden'); }
+function toggleNewbie() {
+  var r = state.nb; if (!r) return;
+  if (!r.on) return openNewbieForm();
+  if (!confirm('새냥이 순번 조정을 끌까냥?\n끄면 바로 원래 순서(패스 우선 → 전투력)로 돌아간다냥.')) return;
+  saveNewbie(false);
+}
+function saveNewbie(on) {
+  var payload = { on: on };
+  if (on) {
+    payload.n = Number($('nb-n').value);
+    payload.since = $('nb-since').value;
+    if (!(payload.n >= 1 && payload.n <= 99) || Math.floor(payload.n) !== payload.n) return toast('몇 칸 미룰지 1~99 숫자로 적어라냥', true);
+    if (!payload.since) return toast('지정 날짜를 골라라냥', true);
+    if (!confirm('새냥이 순번 조정을 켤까냥?\n' + payload.since + ' 이후 가입한 냥이는 경매 순위가 ' + payload.n + '칸 뒤로 밀린다냥.\n(진행중 경매 순서도 바로 바뀐다냥)')) return;
+  }
+  call('saveNewbieRule', payload).then(function (r) {
+    state.nb = r; renderNewbie(); closeNewbieForm();
+    toast(r.on ? '새냥이 순번 조정을 켰다냥 🐣' : '새냥이 순번 조정을 껐다냥');
+    loadAuctions(true);
+  }).catch(function () {});
+}
 function topPriority(a) { var b = a.bidders.filter(function (x) { return x.eligible; })[0]; return !!(b && b.priority); }
 function showBidders(id) {
   var a = state.auctions.filter(function (x) { return x.id === id; })[0]; if (!a) return;
-  var rank = 0;
+  var active = a.status === '진행중', rank = 0;
   var rows = a.bidders.map(function (b) {
     if (b.eligible) rank++;
     var cls = (b.eligible ? '' : 'off') + (b.nickname === state.user.nickname ? ' me' : '');
     return '<tr class="' + cls + '"><td class="rank">' + (b.eligible ? (rank === 1 ? '👑' : rank) : '–') + '</td>' +
-      '<td><b>' + esc(b.nickname) + '</b>' + (b.nickname === a.winner ? ' 🏆' : '') +
+      '<td><b>' + esc(b.nickname) + '</b>' + (b.nickname === a.winner ? ' 🏆' : '') + (b.eligible ? newbieBadge(b) : '') +
       '<div class="muted">' + esc(b.job || '직업 미설정') + (b.eligible ? '' : ' · ' + blockText(b.reason || 'job')) + '</div>' +
       (b.priority && b.eligible ? '<span class="badge prio">⭐ 패스 우선</span>' : '') + '</td>' +
       '<td class="num price">' + fmtPower(b.power) + '</td>' +
       '<td style="white-space:nowrap">' + bidderButtons(a, b) + '</td></tr>';
   }).join('');
-  var passedRows = (a.passed || []).map(function (p) {
+  rows += (a.passed || []).map(function (p) {
     return '<tr class="off"><td class="rank">–</td><td><b>' + esc(p.nickname) + '</b><div class="muted">' + esc(p.job || '직업 미설정') + ' · 패스</div></td>' +
       '<td class="num price">' + fmtPower(p.power) + '</td><td><span class="badge pass">패스</span></td></tr>';
   }).join('');
-  rows += passedRows;
+  var wait = a.waiting || [];
+  var wrows = wait.map(function (m, i) {
+    return '<tr class="' + (m.nickname === state.user.nickname ? 'me' : '') + '"><td class="rank">' + (i + 1) + '</td>' +
+      '<td><b>' + esc(m.nickname) + '</b>' + newbieBadge(m) +
+      '<div class="muted">' + esc(m.job || '직업 미설정') + (m.entry === '불참' ? ' · 이번엔 안 함' : '') + '</div>' +
+      (m.priority ? '<span class="badge prio">⭐ 패스 우선</span>' : '') + '</td>' +
+      '<td class="num price">' + fmtPower(m.power) + '</td><td></td></tr>';
+  }).join('');
+  var head = '<thead><tr><th>순위</th><th>닉네임</th><th class="num">전투력</th><th></th></tr></thead>';
   $('modal-body').innerHTML = '<h2 style="margin-right:60px">' + esc(a.itemName) + '</h2>' +
     '<p class="muted" style="margin-top:-6px">' + (a.itemJob ? '<span class="badge jobtag">' + esc(a.itemJob) + ' 전용</span> ' : '') +
-    '⭐ 패스 우선 → 전투력 높은 순 · 입찰 ' + a.bidders.length + '명 · 패스는 ' + passUntilText(a.passUntil) + '까지</p>' +
-    (rows ? '<table><thead><tr><th>순위</th><th>닉네임</th><th class="num">전투력</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>'
-          : emptyState('아직 입찰한 냥이가 없다냥', 'gray'));
+    '⭐ 패스 우선 → 전투력 높은 순' + (a.demoteN ? ' → 🐣 새냥이는 ' + a.demoteN + '칸 뒤로' : '') +
+    (active ? ' · 패스는 ' + passUntilText(a.passUntil) + '까지' : '') + '</p>' +
+    '<div class="bid-sec">🙋 입찰한 냥이 ' + a.bidders.length + '명</div>' +
+    (rows ? '<table>' + head + '<tbody>' + rows + '</tbody></table>' : emptyState('아직 입찰한 냥이가 없다냥', 'gray')) +
+    (active ? '<div class="bid-sec">💤 입찰 안 한 냥이 ' + wait.length + '명 <small class="muted">(입찰할 수 있는 냥이, 입찰하면 이 순서끼리 비교)</small></div>' +
+      (wrows ? '<table>' + head + '<tbody>' + wrows + '</tbody></table>' : emptyState('입찰할 수 있는 냥이가 모두 입찰했다냥', 'gray')) : '');
   $('modal').classList.remove('hidden');
 }
 // 입찰자 줄 버튼: 진행중 → 길마/부길마는 입찰 취소·패스, 본인은 패스 / 마감 → 낙찰자 패스
