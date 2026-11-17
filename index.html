@@ -478,8 +478,8 @@
               <li>각 아이템마다 필요한 길드원에게 <b>모두 분배될 때까지</b> 경매하는 거다냥.</li>
               <li>입찰한 길드원 중 <b>전투력이 가장 높은 냥이</b>가 낙찰한다냥.</li>
               <li id="guide-newbie" class="hidden"></li>
-              <li>입찰 후 <b>일요일 저녁까지 패스</b>할 수 있고, 패스하면 <b>다음 경매에 1순번</b>으로 낙찰받게 된다냥.</li>
-              <li>경매가 한바퀴 돌아서 더이상 필요한 길드원이 없어진다면, <b>길마 - 부길마 - 투력 60% + 참여도 40%</b>로 입찰없이 지급된다냥.</li>
+              <li>입찰 후 <b>일요일 저녁까지 패스</b>할 수 있고,<br>패스하면 <b>다음 경매에 1순번</b>으로 낙찰받게 된다냥.</li>
+              <li>경매가 한바퀴 돌아서 더이상 필요한 길드원이 없어진다면,<br><b>길마 - 부길마 - 투력 60% + 참여도 40%</b>로 입찰없이 지급된다냥.</li>
               <li><b>내 받기/안 받기</b>를 고치고 싶으면 길마에게 말해주라냥.</li>
             </ol>
           </div>
@@ -1310,8 +1310,8 @@ function renderNewbieGuide() {
   var r = state.nb, li = $('guide-newbie'); if (!li) return;
   li.classList.toggle('hidden', !(r && r.on));
   if (!(r && r.on)) return;
-  li.innerHTML = '🐣 <b>' + esc(sinceText(r.since)) + '</b> 이후 가입한 새냥이는 순위가 <b>' + r.n + '칸</b> 뒤로 밀린다냥 (우선도 -' + r.n + '). ' +
-    '그 덕에 앞선 냥이 ' + r.n + '명이 낙찰받거나 패스하면, 그다음부터 그 아이템 경매에서는 순위가 밀리지 않는다냥.';
+  li.innerHTML = '🐣 <b>' + esc(sinceText(r.since)) + '</b> 이후 가입한 새냥이는 순위가 <b>' + r.n + '칸</b> 뒤로 밀린다냥 (우선도 -' + r.n + ').<br>' +
+    '그 덕에 앞선 냥이 ' + r.n + '명이 낙찰받거나 패스하면,<br>그다음부터 그 아이템 경매에서는 순위가 밀리지 않는다냥.';
 }
 function renderNewbie() {
   renderNewbieGuide();
@@ -1447,7 +1447,7 @@ function renderAuctions() {
     closed.map(function (a) {
       var canPass = a.winner && ((a.winner === state.user.nickname && a.canPass) || isAdmin(state.user.role));
       return '<tr><td>' + esc(a.itemName) + '</td><td class="num">' + won(a.price) + '</td><td>' + (a.winner ? '🏆 ' + esc(a.winner) : '-') +
-        '</td><td>' + a.joined.length + '명' + (a.passed && a.passed.length ? ' · 패스 ' + a.passed.length : '') + '</td><td class="muted">' + fmtDate(a.closedAt) + '</td>' +
+        '</td><td>' + a.joined.length + '명' + (a.passed && a.passed.length ? ' · 패스 ' + a.passed.length : '') + (a.demoteN ? ' <span class="badge newbie" title="새냥이 순번 조정이 적용된 경매">🐣</span>' : '') + '</td><td class="muted">' + fmtDate(a.closedAt) + '</td>' +
         '<td style="white-space:nowrap"><button class="sm" onclick="showBidders(\'' + a.id + '\')">입찰자</button>' +
         (canPass ? ' <button class="sm no" onclick="passBid(\'' + a.id + '\', \'' + esc(a.winner) + '\')">패스</button>' : '') + '</td></tr>';
     }).join('') + '</tbody></table></div>' : '<div class="empty">아직 끝난 경매가 없다냥.</div>';
