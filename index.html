@@ -170,6 +170,9 @@
   .auc-me label { margin-top: 0; }
   .auc-me .row { flex-wrap: nowrap; } .auc-me input { min-width: 0; }
   .badge.pass { background: #e9e1f4; color: #6b4fa0; }
+  .sortth { cursor: pointer; user-select: none; white-space: nowrap; }
+  .sortth:hover { text-decoration: underline; }
+  .sortth .arr { font-size: 11px; opacity: .8; margin-left: 2px; }
   .badge.newbie { background: #fff7c2; border-color: #f2c94c; color: #8a6d00; }
   .bid-sec { margin: 14px 0 6px; font-weight: bold; }
   .bid-sec small { font-weight: normal; }
@@ -676,9 +679,14 @@
 
       <div class="card sub" id="ms-list">
         <h2>길드원 목록 <span class="muted" id="m-count"></span></h2>
-        <p class="muted" style="margin-top:-6px">직업·전투력·권한을 고치고 <b>한꺼번에 저장</b>을 누르라냥.</p>
+        <p class="muted" style="margin-top:-6px">직업·전투력·권한·가입일을 고치고 <b>한꺼번에 저장</b>을 누르라냥. 제목을 누르면 정렬된다냥.</p>
+        <div class="row" style="margin-bottom:10px;align-items:center">
+          <label style="margin:0;white-space:nowrap">📅 이 날짜 이후 가입</label>
+          <input id="m-since" type="date" style="width:auto">
+          <button class="sm" id="m-since-clear" onclick="clearMemberSince()">전체 보기</button>
+        </div>
         <div class="table-scroll"><table class="edit">
-          <thead><tr><th>닉네임</th><th>직업</th><th class="num">전투력</th><th>권한</th><th>비밀번호</th><th>최근 로그인</th><th></th></tr></thead>
+          <thead id="m-head"></thead>
           <tbody id="m-list"></tbody>
         </table></div>
         <div class="savebar idle" id="m-bar">
@@ -2017,8 +2025,8 @@ function addMembers() {
 }
 
 /* --- 길드원 목록: 직업/전투력/권한을 고쳐 두었다가 한꺼번에 저장 --- */
-var MEM_FIELDS = ['job', 'power', 'role'];
-function memOrig(m, f) { return f === 'power' ? (m.power ? String(m.power) : '') : String(m[f] || (f === 'role' ? '길드원' : '')); }
+var MEM_FIELDS = ['job', 'power', 'role', 'joined'];
+function memOrig(m, f) { return f === 'power' ? (m.power ? String(m.power) : '') : f === 'joined' ? dayStr(m.createdAt) : String(m[f] || (f === 'role' ? '길드원' : '')); }
 function memVal(m, f) { var e = state.memEdits[m.nickname]; return e && e[f] !== undefined ? e[f] : memOrig(m, f); }
 function memNorm(f, v) { v = String(v == null ? '' : v).trim(); return f === 'power' ? v.replace(/[,\s]/g, '').replace(/^0+(?=\d)/, '') : v; }
 function memChanged(m, f) { return memNorm(f, memVal(m, f)) !== memNorm(f, memOrig(m, f)); }
@@ -2033,9 +2041,13 @@ function memberChanges() {
   return out;
 }
 function renderMembers() {
-  $('m-count').textContent = '(' + state.members.length + ')';
+  var view = memberView();
+  $('m-count').textContent = '(' + (state.memSince ? view.length + ' / ' : '') + state.members.length + ')';
+  $('m-since-clear').classList.toggle('hidden', !state.memSince);
+  renderMemberHead();
   var iAmMaster = state.user.role === '길마';
-  $('m-list').innerHTML = state.members.map(function (m, idx) {
+  $('m-list').innerHTML = view.length ? view.map(function (o) {
+    var m = o.m, idx = o.idx;
     var isMe = m.nickname === state.user.nickname;
     var canManage = !isMe && (iAmMaster || m.role !== '길마'); // 부길마는 길마 계정을 못 건드림
     var canEdit = isMe || canManage;
@@ -2050,6 +2062,7 @@ function renderMembers() {
       '<td><select data-m="' + idx + '" data-f="job"' + cls('job') + dis + ' style="min-width:120px">' + jobOptions(memVal(m, 'job'), '미설정') + '</select></td>' +
       '<td class="num"><input data-m="' + idx + '" data-f="power"' + cls('power') + dis + ' inputmode="numeric" value="' + esc(memVal(m, 'power')) + '" placeholder="-" style="width:100px;text-align:right"></td>' +
       '<td>' + roleCell + '</td>' +
+      '<td><input type="date" data-m="' + idx + '" data-f="joined"' + cls('joined') + dis + ' value="' + esc(memVal(m, 'joined')) + '" style="width:auto"></td>' +
       '<td>' + (m.hasPassword ? '설정됨' : '<span class="muted">미설정</span>') + '</td>' +
       '<td class="muted">' + fmtDate(m.lastLogin) + '</td>' +
       '<td class="num"><div class="row" style="justify-content:flex-end">' +
@@ -2059,9 +2072,56 @@ function renderMembers() {
           '<button class="sm" onclick="memberAct(' + idx + ',\'reset\')">비번 초기화</button>' +
           '<button class="sm no" onclick="memberAct(' + idx + ',\'delete\')">삭제</button>') +
       '</div></td></tr>';
-  }).join('');
+  }).join('') : '<tr><td colspan="8">' + emptyState(state.memSince ? '그 날짜 이후 가입한 냥이가 없다냥' : '길드원이 없다냥', 'gray') + '</td></tr>';
   updateMemberBar();
 }
+/* --- 길드원 목록 정렬 (제목 누르기, 윈도우 폴더처럼) / 가입일 필터 --- */
+// state.memSort = { key: 'name'|'job'|'power'|'joined', dir: 1|-1 }, state.memSince = 'YYYY-MM-DD' | ''
+function dayStr(t) { if (!t) return ''; var d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function dayTs(str) { var p = String(str || '').split('-'); return p.length === 3 ? new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).getTime() : null; }
+var MEM_COLS = [['name', '닉네임'], ['job', '직업'], ['power', '전투력', 'num'], ['role', '권한'], ['joined', '가입일'], ['pw', '비밀번호'], ['login', '최근 로그인'], ['', '']];
+var MEM_SORTABLE = { name: 1, job: 1, power: 1, joined: 1 };
+function memSortState() { return state.memSort || (state.memSort = { key: 'name', dir: 1 }); }
+function renderMemberHead() {
+  var st = memSortState();
+  $('m-head').innerHTML = '<tr>' + MEM_COLS.map(function (c) {
+    var cls = (c[2] ? c[2] : '') + (MEM_SORTABLE[c[0]] ? ' sortth' : '');
+    var arr = st.key === c[0] ? '<span class="arr">' + (st.dir > 0 ? '▲' : '▼') + '</span>' : '';
+    return '<th' + (cls ? ' class="' + cls.trim() + '"' : '') + (MEM_SORTABLE[c[0]] ? ' onclick="sortMembers(\'' + c[0] + '\')" title="눌러서 정렬"' : '') + '>' + c[1] + arr + '</th>';
+  }).join('') + '</tr>';
+}
+function sortMembers(key) {
+  var st = memSortState();
+  if (st.key === key) st.dir = -st.dir; else { st.key = key; st.dir = key === 'power' ? -1 : 1; }
+  renderMembers();
+}
+// 정렬·필터는 저장된 값 기준 (고치는 중에 줄이 움직이지 않게). 빈 값은 항상 맨 뒤
+function memberView() {
+  var st = memSortState(), since = state.memSince ? dayTs(state.memSince) : null;
+  var view = state.members.map(function (m, idx) { return { m: m, idx: idx }; });
+  if (since != null) view = view.filter(function (o) { return o.m.createdAt && o.m.createdAt >= since; });
+  var name = function (o) { return o.m.nickname; };
+  var val = {
+    name: name,
+    job: function (o) { return o.m.job || ''; },
+    power: function (o) { return o.m.power || 0; },
+    joined: function (o) { return o.m.createdAt || 0; },
+  }[st.key] || name;
+  view.sort(function (a, b) {
+    var x = val(a), y = val(b);
+    var ex = x === '' || x === 0, ey = y === '' || y === 0;
+    if (ex !== ey) return ex ? 1 : -1;
+    var c = typeof x === 'number' ? x - y : String(x).localeCompare(String(y), 'ko');
+    return (c * st.dir) || a.m.nickname.localeCompare(b.m.nickname, 'ko');
+  });
+  return view;
+}
+$('m-since').addEventListener('change', function () {
+  state.memSince = this.value;
+  if (state.memSince) state.memSort = { key: 'joined', dir: 1 }; // 날짜를 고르면 가입일 순으로
+  renderMembers();
+});
+function clearMemberSince() { state.memSince = ''; $('m-since').value = ''; renderMembers(); }
 $('m-list').addEventListener('input', onMemberEdit);
 $('m-list').addEventListener('change', onMemberEdit);
 function onMemberEdit(e) {
